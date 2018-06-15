@@ -1,4 +1,4 @@
-# Model to simulate the spread of propagules attached to motor vehicles
+# Model to simulate the spread of propagules attached to motor vehicles,traffic and airflow. Maurizio's Last version before creating .Rproj
 #
 # requires the road network: 20180314_Verkehrsbelastungen2015_DTV (shapefile)
 #############################################################################
@@ -12,14 +12,14 @@ library(data.table)
 
 setwd("C:/Users/mbagnara/Desktop/BiK-F postDoc/Data/TestDataRoad/20180314_Verkehrsbelastungen2015_DTV/")
 
-makeplot <- TRUE # plot spread? 
+makeplot <- TRUE # plot spread?
 
 #### Model parameters and functions #####
 cat("\n Defining Kernels")
 
 ## dispersal kernel
 a0 <- 0.001  ## pick-up probability:  can be improved using function based on seed characteristics (e.g. seed mass)
-a <- 0.6556 
+a <- 0.6556
 b <- -0.05
 g <- 0.3311
 f_disp <- function(D,a,b,g,p) exp(b*exp(a*(D^g)))*p # model 2 in Taylor et al 2012, requires distance in km
@@ -54,21 +54,21 @@ if (makeplot){
     border_shp <- readOGR(dsn=getwd(),layer="gadm36_DEU_1",stringsAsFactors = F)
     setwd("C:/Users/mbagnara/Desktop/BiK-F postDoc/Data/germany-places-shape/")
     places_shp <- readOGR(dsn=getwd(),layer="places",stringsAsFactors = F)
-    
+
     setwd("C:/Users/mbagnara/Desktop/BiK-F postDoc/Data/TestDataRoad/20180314_Verkehrsbelastungen2015_DTV/")
     roads_shp <- readOGR(dsn=getwd(),layer="20180314_Verkehrsbelastungen2015_DTV",stringsAsFactors = F)
     nodes_shp <- readOGR(dsn=getwd(),layer="20180209_KnotenNemobfstr",stringsAsFactors = F)
-    
+
     cat("\n Converting coordinates to WGS84")
     cat("\n")
     roads_shp<-spTransform(roads_shp, CRS("+proj=longlat +datum=WGS84"))
     nodes_shp<-spTransform(nodes_shp, CRS("+proj=longlat +datum=WGS84"))
-    
+
     save(border_shp,roads_shp,nodes_shp,places_shp,file="road_shp.Rdata")
   }
-  
+
   colour <- rev(colorRampPalette(c("red","orange","yellow"))(101))
-  
+
 }
 
 ## load network #################################
@@ -117,8 +117,8 @@ node_state[FromNode==init_node,state:=1]
 nextnodes <- road_netw[FromNode%in%node_state[state>0,FromNode]] # identify next nodes
 nextnodes <- nextnodes[node_state, nomatch=0] # get states of all nodes
 
-newstate <- nextnodes$state       
-if (distance_incl) newstate <- newstate * nextnodes$Attach_prob   # prob to reach nodes due to attachment including pick-up probability 
+newstate <- nextnodes$state
+if (distance_incl) newstate <- newstate * nextnodes$Attach_prob   # prob to reach nodes due to attachment including pick-up probability
 if (traffic_incl) newstate <- newstate  * nextnodes$Traffic_prob  # prob to reach nodes due to traffic amount
 if (airflow_incl) newstate <- newstate * nextnodes$Airflow_prob   # prob to reach nodes due to vehicle airflow
 
@@ -133,7 +133,7 @@ if (makeplot){
   op <- par(mar=rep(0,4))
   plot(border_shp,axes=F,
        panel.first=rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4]))
-  
+
   plot(roads_shp,add=T,col="gray")
 }
 
@@ -157,27 +157,27 @@ pb <- txtProgressBar(title = "Simulation state", label = "0% done",min=0, max=ma
 for (t in 1:max_times){
   ninfected <- node_state[state>0,FromNode]
   if (length(ninfected)>max_node) break  # stop if too many nodes are infected
-  
+
   nextnodes <- road_netw[FromNode%in%node_state[state>0,FromNode]] # identify next nodes
   nextnodes <- nextnodes[node_state, nomatch=0] # merge with node_state to get states of all relevant nodes
   nextnodes[,newstate:=nextnodes$state * nextnodes$Attach_prob * nextnodes$Traffic_prob * nextnodes$Airflow_prob] # prob to reach nodes
-  
+
   newstate <- nextnodes[,1-prod(1-newstate),by=ToNode] # combine all arrivals to the same node
   names(newstate) <- c("FromNode","finalarrivals")
   setkey(newstate,FromNode)
-  
+
   old_new_states <- node_state[newstate]
   old_new_states[,finalstate:=1-((1-state)*(1-finalarrivals))] # merge new node state with with old state
-  
+
   node_state[FromNode%in%old_new_states$FromNode,state:=old_new_states$finalstate] # assigne new values
-  
+
   if (makeplot){
     x <- x + 1
     if (t%in%plot_times){ # plot only few steps
       nodelist<-nextnodes$ToNode
       roads_shp_sub <- subset(roads_shp,Von_Knoten%in%nodelist)
       node_shp_sub <- subset(nodes_shp,Knoten_Num%in%node_state[state>0,FromNode])
-      
+
       dat_nodes <- node_shp_sub@data
       dat_nodes <- cbind(dat_nodes,1:dim(dat_nodes)[1])
       dat_nodes$Knoten_Num <- as.numeric(dat_nodes$Knoten_Num)
@@ -185,18 +185,18 @@ for (t in 1:max_times){
       nodes_col$norm <- log(nodes_col$state+1)
       nodes_col$norm <- round((nodes_col$norm/max(nodes_col$norm)*100)+1)
       nodes_col$col <- colour[nodes_col$norm]
-      
+
       points(node_shp_sub,col=nodes_col$col,pch=16,cex=.1)
       points(subset(node_shp_sub,Knoten_Num==init_node),pch=4,cex=1,col="blue",lwd=2)
-      
+
       legend("topleft",c(paste0("Iter. #",t)),box.col = "white",bg = "white")
     }
   }
-  
+
   #update progress bar
   info <- sprintf("%d%% done", round((t/max_times)*100))
   setTxtProgressBar(pb, t/(100)*100, label=info)
-  
+
 }
 
 plot(border_shp,axes=F,add=T)
@@ -214,5 +214,5 @@ if (makeplot) par(op)
 # Rprof(NULL)
 # summaryRprof(tmp)
 # proc.time() - tmp
-if (length(ninfected)>max_node) cat("\n More then ",max_node, "infected, simulation halted") 
+if (length(ninfected)>max_node) cat("\n More then ",max_node, "infected, simulation halted")
 cat("\n Simulation complete")

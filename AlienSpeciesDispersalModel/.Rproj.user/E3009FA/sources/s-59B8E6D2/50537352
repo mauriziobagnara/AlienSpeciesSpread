@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1529081192324.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1449264113",
+    "id" : "50537352",
+    "lastKnownWriteTime" : 1529092691,
+    "last_content_update" : 1529092691669,
+    "path" : "~/GitHub/AlienSpeciesSpread/ModelRoadAttachmentSpread2.r",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "120,34",
+        "scrollLine" : "112"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

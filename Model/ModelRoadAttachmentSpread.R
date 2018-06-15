@@ -14,11 +14,11 @@ setwd("C:/Users/mbagnara/Desktop/BiK-F postDoc/Data/TestDataRoad/20180314_Verkeh
 
 makeplot <- TRUE # plot spread? 
 
-#### Model paramters and functions #####
+#### Model parameters and functions #####
 cat("\n Defining Kernels")
 
 ## dispersal kernel
-a0 <- 0.001  ## pick-up probability:  can be improved using function based on seed characteristics (e.g. mass)
+a0 <- 0.001  ## pick-up probability:  can be improved using function based on seed characteristics (e.g. seed mass)
 a <- 0.6556 
 b <- -0.05
 g <- 0.3311

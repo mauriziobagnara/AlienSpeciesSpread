@@ -14,7 +14,7 @@ setwd("C:/Users/mbagnara/Desktop/BiK-F postDoc/Data/TestDataRoad/20180314_Verkeh
 
 makeplot <- TRUE # plot spread? 
 
-#### Model paramters and functions #################################
+#### Model paramters and functions #####
 cat("\n Defining Kernels")
 
 ## dispersal kernel

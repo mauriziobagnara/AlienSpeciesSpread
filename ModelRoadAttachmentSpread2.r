@@ -118,8 +118,8 @@ node_state[,newarrivals:=as.numeric(newarrivals)]
 setkey(node_state,FromNode)
 
 ### initialising simulation #######################
-init_node <- c(46239,205131,924872)  #somewhere in Berlin?
-#init_node <- 205131 # or 207036 Somewhere close to Freiburg
+init_node <- c(46239,205131,924872)  # respectively Berlin,Freiburg and Hamburg
+
 node_state[FromNode%in%init_node,state:=1]
 
 ### select next nodes #############################

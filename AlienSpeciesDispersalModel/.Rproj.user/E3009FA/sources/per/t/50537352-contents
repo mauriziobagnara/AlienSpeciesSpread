@@ -87,7 +87,6 @@ road_netw <- rbind(road_netw,road_netw_otherdir)
 
 ## transform measures into a single dispersal probability
 # Events are considered mutually exclusive: a seed can get to the next node by one driver alone. Does not consider a population of seeds.
-
 # road_netw[,Length:=f_disp(Length)]
 # road_netw[,Traffic:=f_traff(Traffic)]
 road_netw[,disp:=0]
@@ -121,7 +120,7 @@ setkey(node_state,FromNode)
 
 ### initialising simulation #######################
 init_node <- c(46239,205131,924872)  # respectively Berlin,Freiburg and Hamburg
-
+init_node <-init_node[3]
 node_state[FromNode%in%init_node,state:=1]
 
 ### select next nodes #############################

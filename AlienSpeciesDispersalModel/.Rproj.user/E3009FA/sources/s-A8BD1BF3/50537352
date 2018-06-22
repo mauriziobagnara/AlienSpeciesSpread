@@ -5,16 +5,16 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "0",
+    "hash" : "2860787441",
     "id" : "50537352",
-    "lastKnownWriteTime" : 1529676370,
-    "last_content_update" : 1529676370974,
+    "lastKnownWriteTime" : 1529678321,
+    "last_content_update" : 1529678321380,
     "path" : "~/GitHub/AlienSpeciesSpread/InitializationScript.R",
     "project_path" : null,
     "properties" : {
-        "cursorPosition" : "13,0",
+        "cursorPosition" : "49,59",
         "docOutlineVisible" : "0",
-        "scrollLine" : "0"
+        "scrollLine" : "38"
     },
     "relative_order" : 1,
     "source_on_save" : false,

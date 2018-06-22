@@ -157,4 +157,7 @@ SpreadModel <- function(dir_data, netw_data,init_nodes, num_iter, incl_attachmen
 
   cat("\n Simulation complete \n")
   print(proc.time() - tmp)
+
+return(road_netw)
+
 }

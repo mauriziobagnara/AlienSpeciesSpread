@@ -46,9 +46,8 @@ numIter<- 1000 # simulation steps
 iterPlot <- c(1:10, round(seq(1,numIter,length.out=11))) # used for plotting
 
 SpreadModel(dir_data=dataDir, netw_data=dataNetw,init_nodes=initNodes, num_iter=numIter,
-            incl_attachment=T,incl_airflow=T,
-            pickup_prob=a0, att1=par_att1,par_att2,par_att3, par_air1,par_air2,
-            makeplot=T,data_plot=dataPlot, iter_plot=iterPlot)
+            incl_attachment=T,incl_airflow=F,
+            pickup_prob=a0, att1=par_att1,par_att2,par_att3)
 
 #setwd("C:/Users/mbagnara/Desktop/")
 #system("C:/ImageMagick-7.0.8-Q16/convert.exe -delay 80 *.png ModelSpread.gif")

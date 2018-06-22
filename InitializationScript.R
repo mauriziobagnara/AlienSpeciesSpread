@@ -1,0 +1,55 @@
+# Model to simulate the spread of propagules attached to motor vehicles
+#
+# requires the road network: 20180314_Verkehrsbelastungen2015_DTV (shapefile)
+#############################################################################
+
+rm(list=ls())
+graphics.off()
+
+library(rgdal) # only used for plotting
+library(sf)
+library(data.table)
+
+setwd("C:/Users/mbagnara/Desktop/BiK-F postDoc/Model/")
+
+#setwd("/home/hanno/Bioinvasion/EBAspread/Data/RoadData")
+
+#### Model paramters #################################
+
+## pick-up probability. For Attachment AND airflow dispersal
+a0 <- 0.000001 #
+
+## attachment kernel parameters
+par_att1 <- 0.6556
+par_att2 <- -0.05
+par_att3 <- 0.3311
+#f_disp <- function(D) exp(b*exp(c*(D^g)))
+
+## traffic kernel parameters
+# traf1 <- 1e-06
+#f_traff <- function(T) 1-exp(-a*T)
+
+## airflow kernel parameters
+par_air1<-0.211
+par_air2<-0.791
+
+#### Initialization info #################################
+
+dataDir<-"C:/Users/mbagnara/Dropbox/AlienSpeciesSpread/Data/TestDataRoad/20180314_Verkehrsbelastungen2015_DTV"
+dataNetw<-"20180314_Verkehrsbelastungen2015_DTV" #network layer
+dataPlot<- "road_shp.Rdata"
+
+initNodes <- c(46239,205131,924872)  # respectively Berlin,Freiburg and Hamburg
+initNodes <-initNodes[3]
+
+numIter<- 1000 # simulation steps
+iterPlot <- c(1:10, round(seq(1,numIter,length.out=11))) # used for plotting
+
+SpreadModel(dir_data=dataDir, netw_data=dataNetw,init_nodes=initNodes, num_iter=numIter,
+            incl_attachment=T,incl_airflow=T,
+            pickup_prob=a0, att1=par_att1,par_att2,par_att3, par_air1,par_air2,
+            makeplot=T,data_plot=dataPlot, iter_plot=iterPlot)
+
+#setwd("C:/Users/mbagnara/Desktop/")
+#system("C:/ImageMagick-7.0.8-Q16/convert.exe -delay 80 *.png ModelSpread.gif")
+

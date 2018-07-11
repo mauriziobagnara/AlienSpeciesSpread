@@ -1,0 +1,48 @@
+"GRID_CODE";"CLC_CODE";"LABEL3";"RGB";"LC_cat_ID"
+1;111;"Continuous urban fabric";"230-000-077";1
+2;112;"Discontinuous urban fabric";"255-000-000";1
+3;121;"Industrial or commercial units";"204-077-242";1
+4;122;"Road and rail networks and associated land";"204-000-000";1
+5;123;"Port areas";"230-204-204";1
+6;124;"Airports";"230-204-230";1
+7;131;"Mineral extraction sites";"166-000-204";1
+8;132;"Dump sites";"166-077-000";1
+9;133;"Construction sites";"255-077-255";1
+10;141;"Green urban areas";"255-166-255";2
+11;142;"Sport and leisure facilities";"255-230-255";2
+12;211;"Non-irrigated arable land";"255-255-168";2
+13;212;"Permanently irrigated land";"255-255-000";2
+14;213;"Rice fields";"230-230-000";2
+15;221;"Vineyards";"230-128-000";2
+16;222;"Fruit trees and berry plantations";"242-166-077";2
+17;223;"Olive groves";"230-166-000";2
+18;231;"Pastures";"230-230-077";2
+19;241;"Annual crops associated with permanent crops";"255-230-166";2
+20;242;"Complex cultivation patterns";"255-230-077";2
+21;243;"Land principally occupied by agriculture, with significant areas of natural vegetation";"230-204-077";2
+22;244;"Agro-forestry areas";"242-204-166";2
+23;311;"Broad-leaved forest";"128-255-000";3
+24;312;"Coniferous forest";"000-166-000";3
+25;313;"Mixed forest";"077-255-000";3
+26;321;"Natural grasslands";"204-242-077";2
+27;322;"Moors and heathland";"166-255-128";2
+28;323;"Sclerophyllous vegetation";"166-230-077";2
+29;324;"Transitional woodland-shrub";"166-242-000";2
+30;331;"Beaches, dunes, sands";"230-230-230";2
+31;332;"Bare rocks";"204-204-204";2
+32;333;"Sparsely vegetated areas";"204-255-204";2
+33;334;"Burnt areas";"000-000-000";2
+34;335;"Glaciers and perpetual snow";"166-230-204";2
+35;411;"Inland marshes";"166-166-255";4
+36;412;"Peat bogs";"077-077-255";4
+37;421;"Salt marshes";"204-204-255";4
+38;422;"Salines";"230-230-255";4
+39;423;"Intertidal flats";"166-166-230";4
+40;511;"Water courses";"000-204-242";4
+41;512;"Water bodies";"128-242-230";4
+42;521;"Coastal lagoons";"000-255-166";4
+43;522;"Estuaries";"166-255-230";4
+44;523;"Sea and ocean";"230-242-255";4
+48;999;"NODATA";;
+49;990;"UNCLASSIFIED LAND SURFACE";;
+50;995;"UNCLASSIFIED WATER BODIES";"230-242-255";

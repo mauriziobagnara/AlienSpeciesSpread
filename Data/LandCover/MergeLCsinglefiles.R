@@ -47,6 +47,6 @@ all_cats_df$LinkID <- linknames
 
 
 
-write.table(all_cats_df,"../../Bioinvasion/EBAspread/Data/GetLandCoverData/Out/LandCocer_Links_50m.csv",row.names=F)
-saveRDS(all_cats_df,file="../../Bioinvasion/EBAspread/Data/GetLandCoverData/Out/LandCocer_Links_50m.rds")
+write.table(all_cats_df,"../../Bioinvasion/EBAspread/Data/GetLandCoverData/Out/LandCocer_Roads_50m.csv",row.names=F)
+saveRDS(all_cats_df,file="../../Bioinvasion/EBAspread/Data/GetLandCoverData/Out/LandCocer_Roads_50m.rds")
 # dput(all_cats,file="../../Bioinvasion/EBAspread/Data/GetLandCoverData/Out/LandCocer_Links_50m.rls")

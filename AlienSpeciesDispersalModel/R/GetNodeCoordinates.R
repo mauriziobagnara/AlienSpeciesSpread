@@ -128,4 +128,4 @@ nodeIDs$Gemeinde <- Gemeinde_index
 
 setwd("/home/hanno/Bioinvasion/EBAspread/Model")
 
-# write.table(nodeIDs,"NodeLocations.csv")
+# write.table(nodeIDs,"RoadNodeLocations.csv")

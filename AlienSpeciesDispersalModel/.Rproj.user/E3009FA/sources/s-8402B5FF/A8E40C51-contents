@@ -30,7 +30,7 @@ plotResults<-function(list_results,dir_data,netw_data,data_plot,save_dir){
   for (i in 1:length(list_results)){
     cat("\n Creating map ",i,"out of ", length(list_results),"\n")
 
-    roads_shp@data <-modelResults[[3]]
+    roads_shp@data <-list_results[[i]]
     roads_shp@data$norm <- as.factor(round(roads_shp@data$Pinv,4))
     roads_shp@data<-merge(roads_shp@data,pal,by="norm",sort=FALSE)
 

@@ -59,7 +59,7 @@ modelResults<-SpreadModel(parameters,
 
 head(modelResults[[length(modelResults)]],10)
 
- # setwd("C:/Users/mbagnara/Desktop/BiK-F postDoc/Model/12-Aug-2018 16-25-19")
- # system("C:/ImageMagick-7.0.8-Q16/convert.exe -delay 80 *.png ModelSpread.gif")
- # setwd(mainDir)
+# setwd("C:/Users/mbagnara/Desktop/BiK-F postDoc/Model/16-Aug-2018 17-16-52")
+# system("C:/ImageMagick-7.0.8-Q16/convert.exe -delay 80 *.png ModelSpread.gif")
+# setwd(mainDir)
 

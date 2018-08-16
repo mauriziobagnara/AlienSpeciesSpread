@@ -6,11 +6,12 @@
 rm(list=ls())
 graphics.off()
 
+
 library(rgdal) # only used for plotting
 library(sf)
 library(data.table)
 
-mainDir<-"C:/Users/maurizio/Desktop/BiK-F postDoc/Model"
+mainDir<-"C:/Users/mbagnara/Desktop/BiK-F postDoc/Model"
 setwd(mainDir)
 
 #setwd("/home/hanno/Bioinvasion/EBAspread/Data/RoadData")
@@ -41,7 +42,7 @@ colnames(parameters)<-c("pickup_prob", "att1","att2","att3", "air1","air2")
 
 #### Initialization info #################################
 
-dir_data<-"C:/Users/maurizio/Dropbox/AlienSpeciesSpread/Data/TestDataRoad/20180314_Verkehrsbelastungen2015_DTV"
+dir_data<-"C:/Users/mbagnara/Dropbox/AlienSpeciesSpread/Data/TestDataRoad/20180314_Verkehrsbelastungen2015_DTV"
 netw_data<-"20180704_BelastungLkwPkw" #network layer
 data_plot<- "road_shp.Rdata"
 
@@ -49,16 +50,16 @@ initNodes <- c(215469)  # Where is this?
 init_nodes <- initNodes[1]
 
 num_iter<- 720 # simulation steps
-iterPlot <- round(seq(1,num_iter,length.out = 5),0) # used for plotting
+iter_save <- round(seq(1,num_iter,length.out = 5),0) # used for plotting
 
 modelResults<-SpreadModel(parameters,
                           dir_data=dir_data, netw_data=netw_data,init_nodes=init_nodes, num_iter=num_iter,
                           incl_attachment=T,incl_airflow=T,
-                          makeplot = T, data_plot = data_plot, iter_plot = iterPlot)
+                          makeplot = T, data_plot = data_plot,iter_save = iter_save)
 
 head(modelResults[[length(modelResults)]],10)
 
-# setwd("C:/Users/maurizio/Desktop/BiK-F postDoc/Model/12-Aug-2018 16-25-19")
-# system("C:/ImageMagick-7.0.8-Q16/convert.exe -delay 80 *.png ModelSpread.gif")
-# setwd(mainDir)
+ # setwd("C:/Users/mbagnara/Desktop/BiK-F postDoc/Model/12-Aug-2018 16-25-19")
+ # system("C:/ImageMagick-7.0.8-Q16/convert.exe -delay 80 *.png ModelSpread.gif")
+ # setwd(mainDir)
 

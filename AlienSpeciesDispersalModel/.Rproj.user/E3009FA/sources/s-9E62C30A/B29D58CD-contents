@@ -47,7 +47,7 @@ colnames(nodeIDs)[2:3] <- c("Long","Lat")
 setwd("/home/hanno/Dropbox/AlienSpeciesSpread/Data/TestDataRoad/20180314_Verkehrsbelastungen2015_DTV/gadm36_DEU_shp")
 
 ## load administrative boundaries, federal states
-states <- readOGR(dsn=file.path(dir_data,"gadm36_DEU_shp"),layer="gadm36_DEU_1",stringsAsFactors=F)
+states <- readOGR(dsn=getwd(),layer="gadm36_DEU_1",stringsAsFactors=F)
 
 states2 <- SpatialPolygons(states@polygons)
 proj4string(states2) <- proj4string(states)

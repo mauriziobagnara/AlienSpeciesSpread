@@ -44,18 +44,19 @@ colnames(parameters)<-c("pickup_prob", "att1","att2","att3", "air1","air2")
 
 dir_data<-"C:/Users/mbagnara/Dropbox/AlienSpeciesSpread/Data/TestDataRoad/20180314_Verkehrsbelastungen2015_DTV"
 netw_data<-"20180704_BelastungLkwPkw" #network layer
-data_plot<- "road_shp.Rdata"
+Rdata_file<- "road_shp.Rdata"
 
-initNodes <- c(215469)  # Where is this?
-init_nodes <- initNodes[1]
+
+init_coords <- data.frame(Long=c(9.9938531,13.2862487),Lat=c(53.5396466,52.5588327)) # Hamburg Hafen & Berlin airport
 
 num_iter<- 720 # simulation steps
 iter_save <- round(seq(1,num_iter,length.out = 5),0) # used for plotting
 
 modelResults<-SpreadModel(parameters,
-                          dir_data=dir_data, netw_data=netw_data,init_nodes=init_nodes, num_iter=num_iter,
+                          dir_data=dir_data, netw_data=netw_data,init_coords=init_coords, num_iter=num_iter,
                           incl_attachment=T,incl_airflow=T,
-                          makeplot = T, data_plot = data_plot,iter_save = iter_save)
+                          makeplot = T, Rdata_file = Rdata_file,iter_save = iter_save
+                          )
 
 head(modelResults[[length(modelResults)]],10)
 

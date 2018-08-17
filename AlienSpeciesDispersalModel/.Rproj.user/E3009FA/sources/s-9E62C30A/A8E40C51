@@ -5,15 +5,15 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "1518971373",
+    "hash" : "3491680222",
     "id" : "A8E40C51",
-    "lastKnownWriteTime" : 1534432438,
-    "last_content_update" : 1534432438361,
+    "lastKnownWriteTime" : 1534516346,
+    "last_content_update" : 1534516346445,
     "path" : "~/GitHub/AlienSpeciesSpread/AlienSpeciesDispersalModel/R/plotResults.R",
     "project_path" : "R/plotResults.R",
     "properties" : {
-        "cursorPosition" : "29,36",
-        "scrollLine" : "18"
+        "cursorPosition" : "39,48",
+        "scrollLine" : "27"
     },
     "relative_order" : 3,
     "source_on_save" : false,

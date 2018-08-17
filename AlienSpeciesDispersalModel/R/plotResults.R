@@ -1,23 +1,8 @@
-plotResults<-function(list_results,dir_data,netw_data,data_plot,save_dir){
+plotResults<-function(list_results,dir_data,ShapeObj,save_dir){
 
   cat("\n Loading maps data \n")
-  if (file.exists(file.path(dir_data,data_plot))) load(file.path(dir_data,data_plot))
-  else {
+
     border_shp <- readOGR(dsn=file.path(dir_data,"gadm36_DEU_shp"),layer="gadm36_DEU_1",stringsAsFactors = F)
-
-    roads_shp <- readOGR(dsn=dir_data,layer=netw_data,stringsAsFactors = F)
-    #nodes_shp <- readOGR(dsn=dir_data,layer="20180209_KnotenNemobfstr",stringsAsFactors = F)
-
-    cat("\n Converting coordinates to WGS84")
-    cat("\n")
-    roads_shp<-spTransform(roads_shp, CRS("+proj=longlat +datum=WGS84"))
-    roads_shp@data$ID<-paste(roads_shp@data$Von_Knoten,roads_shp@data$Nach_Knote,sep="_")
-    #  nodes_shp<-spTransform(nodes_shp, CRS("+proj=longlat +datum=WGS84"))
-
-    save(border_shp,roads_shp,
-         #nodes_shp,
-         file=file.path(dir_data,"road_shp.Rdata"))
-  }
 
   #create palette
   norm<-seq(0,1,length.out=100001)
@@ -30,9 +15,9 @@ plotResults<-function(list_results,dir_data,netw_data,data_plot,save_dir){
   for (i in 1:length(list_results)){
     cat("\n Creating map ",i,"out of ", length(list_results),"\n")
 
-    roads_shp@data <-list_results[[i]]
-    roads_shp@data$norm <- as.factor(round(roads_shp@data$Pinv,4))
-    roads_shp@data<-merge(roads_shp@data,pal,by="norm",sort=FALSE)
+    ShapeObj@data <-list_results[[i]]
+    ShapeObj@data$norm <- as.factor(round(ShapeObj@data$Pinv,4))
+    ShapeObj@data<-merge(ShapeObj@data,pal,by="norm",sort=FALSE)
 
     #roads_shp_sub <- subset(roads_shp,ID%in%road_netw[Pinv>0,ID]) ## create the shapefile subset
 
@@ -52,7 +37,7 @@ plotResults<-function(list_results,dir_data,netw_data,data_plot,save_dir){
       op <- par(mar=rep(0,4))
     plot(border_shp,axes=F,
          panel.first=rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4]),lwd=0.1)
-    plot(roads_shp,add=T,col=roads_shp@data$color)
+    plot(ShapeObj,add=T,col=ShapeObj@data$color)
 
     # for (j in init_nodes) points(subset(node_shp_sub,Knoten_Num%in%j),pch=1,cex=1,col="blue",lwd=2)
     # mtext(t,side=3,line=-2)

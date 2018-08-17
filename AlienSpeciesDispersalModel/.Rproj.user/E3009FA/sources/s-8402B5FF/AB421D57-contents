@@ -1,9 +1,10 @@
 #needs matrix of parameters. should call parameters by name (via colnames(matrix)).
 #  Needs parallelitazion already? If so, folder structure needed to save results of each run separately.
 # parallelization not needed yet for parameters, might be useful for networks at a later stage.
+
 SpreadModel <- function(parameters,
                         dir_data, netw_data,init_nodes, num_iter, incl_attachment=T,incl_airflow=T,
-                        makeplot=F,data_plot=NULL, iter_plot=NULL,save_plot=F){
+                        makeplot=F,data_plot=NULL, iter_save=num_iter){
   ####################################################################
 
   ### load shapefiles (takes a while!) ######################################################
@@ -35,8 +36,8 @@ SpreadModel <- function(parameters,
   # }
 
 for (nparset in nrow(parameters)){
-  dir.name<-format(Sys.time(), "%d-%b-%Y %H-%M-%S")
-  dir.create(file.path(getwd(),dir.name))
+  dir.name<-file.path(getwd(),format(Sys.time(), "%d-%b-%Y %H-%M-%S"))
+  dir.create(dir.name)
 
   if (incl_attachment) {
     road_netw[,p_attach:=f_attach(Length,parameters[nparset,"att1"],parameters[nparset,"att2"],parameters[nparset,"att3"],p=1)]
@@ -77,50 +78,19 @@ for (nparset in nrow(parameters)){
   # newstate <- nextnodes$state * a0 * nextnodes$Length * nextnodes$Traffic # prob to reach nodes
   # node_state[FromNode%in%nextnodes$ToNode,state:=newstate] # assigne new values
 
-  if (makeplot){
-    cat("\n Loading data for plot \n")
-      if (file.exists(file.path(dir_data,data_plot))) load(file.path(dir_data,data_plot))
-      else {
-        border_shp <- readOGR(dsn=file.path(dir_data,"gadm36_DEU_shp"),layer="gadm36_DEU_1",stringsAsFactors = F)
-
-      roads_shp <- readOGR(dsn=dir_data,layer=netw_data,stringsAsFactors = F)
-        #nodes_shp <- readOGR(dsn=dir_data,layer="20180209_KnotenNemobfstr",stringsAsFactors = F)
-
-        cat("\n Converting coordinates to WGS84")
-        cat("\n")
-        roads_shp<-spTransform(roads_shp, CRS("+proj=longlat +datum=WGS84"))
-        roads_shp@data$ID<-paste(roads_shp@data$Von_Knoten,roads_shp@data$Nach_Knote,sep="_")
-      #  nodes_shp<-spTransform(nodes_shp, CRS("+proj=longlat +datum=WGS84"))
-
-        save(border_shp,roads_shp,
-             #nodes_shp,
-             file=file.path(dir_data,"road_shp.Rdata"))
-      }
-
-      #colour <- rev(colorRampPalette(c("red","orange","yellow"))(101))
-
-    #  graphics.off()
-    # x11(width=7,height=8)
-    # op <- par(mar=rep(0,4))
-    # cat("\n Plotting network \n")
-    # plot(border_shp,axes=F,
-    #      panel.first=rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4]))
-    #
-    # plot(roads_shp,add=T,col="gray")
-  }
-
 
   ## subsequent steps ######
   cat("\n Ongoing Simulation \n")
-  x <- 0
 
   #setup progress bar
   pb <- txtProgressBar(title = "Simulation state", label = "0% done",min=0, max=num_iter, initial=0,style = 3)
 
+  modelList<- list()
+
   tmp <- proc.time()
   for (t in 1:num_iter){
 
-    road_netw[,state:=NULL]
+    if("state" %in% colnames(road_netw)) road_netw[,state:=NULL]
 
     node_state_sub <- node_state[state>0,] # take a subset of occupied nodes, required to speed up 'merge' below
     nextnodes <- road_netw[FromNode%in%node_state_sub$FromNode] # identify next nodes
@@ -140,59 +110,29 @@ for (nparset in nrow(parameters)){
     #combine to Pinv
     road_netw[,Pinv:=Pe*(1-Pi)*state]
 
-    ## 15.06.2018 Maurizio: modified previous plot comment to plot entire German network and borders. Slower,
-    ## but does not require a subset of the road shapefile.
+    # store results
+    if (t%in%iter_save) modelList[[as.character(t)]]<-road_netw
 
-    if (makeplot){
-      x <- x + 1
-
-      if (t%in%iter_plot){ # plot only few steps
-        colour <- rev(colorRampPalette(c("red","orange","yellow","lightgray"))(101))
-        roads_shp@data <-road_netw
-        roads_shp@data$norm <- log(roads_shp@data$Pinv+1)
-        roads_shp@data$norm <- round((roads_shp@data$norm/max(roads_shp@data$norm)*100)+1)
-        roads_shp@data$col <- colour[roads_shp@data$norm]
-
-        #roads_shp_sub <- subset(roads_shp,ID%in%road_netw[Pinv>0,ID]) ## create the shapefile subset
-
-         # node_shp_sub <- subset(nodes_shp,Knoten_Num%in%node_state[state==0,FromNode])
-        #
-         # dat_nodes <- nodes_shp_sub@data
-         # dat_nodes <- cbind(dat_nodes,1:dim(dat_nodes)[1])
-         # colnames(dat_nodes)[2] <- "order"
-        # dat_nodes$Knoten_Num <- as.numeric(dat_nodes$Knoten_Num)
-        # nodes_col <- merge(node_state,dat_nodes,by.x="FromNode",by.y="Knoten_Num",all.y=T)
-
-        # nodes_col <- nodes_col[order(nodes_col$order)]
-
-     #   assign(x = "node_shp_sub",value = node_shp_sub, envir = .GlobalEnv)
-        x11(width=7,height=8)
-        op <- par(mar=rep(0,4))
-        cat("\n Plotting network \n")
-        plot(border_shp,axes=F,
-             panel.first=rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4]),lwd=0.5)
-         plot(roads_shp,add=T,col=roads_shp@data$col)
-
-        # for (j in init_nodes) points(subset(node_shp_sub,Knoten_Num%in%j),pch=1,cex=1,col="blue",lwd=2)
-        # mtext(t,side=3,line=-2)
-        legend("topleft",c(paste0("Iter. #",t)),box.col = "white",bg = "white")
-        plot(border_shp,axes=F,add=T,lwd=0.5)
-      if (save_plot){
-        cat("\n Inter. #",t," , Saving plot \n")
-        dev.copy(png,file=file.path(dir.name,(paste0("SpreadModelIter",sprintf("%04d", t),".png"))))
-        dev.off()
-        }
-      }
-    }
     #update progress bar
     info <- sprintf("%d%% done", round((t/num_iter)*100))
     setTxtProgressBar(pb, t/(100)*100, label=info)
+    }
   }
   close(pb)
 
-  cat("\n Simulation complete \n")
-  print(proc.time() - tmp)
+  cat("\n Exporting final results \n")
+  write.csv(x = road_netw,file = file.path(dir.name, "ModelResults.csv"),quote = F,row.names = F)
+ # assign(x = "modelList",value = modelList,envir = .GlobalEnv)
 
-return(road_netw)
+
+  if (makeplot) {
+    cat("\n Creating maps \n")
+    plotResults(list_results=modelList,dir_data=dir_data,netw_data=netw_data,data_plot=data_plot,save_dir=dir.name)
+  }
+
+  cat("\n Simulation complete \n")
+  cat("\n Output files created in ", dir.name, "\n")
+  print(proc.time() - tmp)
+return(modelList)
 }
-}
+

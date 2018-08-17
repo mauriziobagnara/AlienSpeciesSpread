@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1534412686936.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1518971373",
+    "id" : "A8E40C51",
+    "lastKnownWriteTime" : 1534432438,
+    "last_content_update" : 1534432438361,
+    "path" : "~/GitHub/AlienSpeciesSpread/AlienSpeciesDispersalModel/R/plotResults.R",
+    "project_path" : "R/plotResults.R",
+    "properties" : {
+        "cursorPosition" : "29,36",
+        "scrollLine" : "18"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

@@ -4,7 +4,7 @@
 
 SpreadModel <- function(parameters,
                         dir_data, netw_data,init_nodes, num_iter, incl_attachment=T,incl_airflow=T,
-                        makeplot=F,data_plot=NULL, iter_plot=NULL){
+                        makeplot=F,data_plot=NULL, iter_save=num_iter){
   ####################################################################
 
   ### load shapefiles (takes a while!) ######################################################
@@ -85,7 +85,7 @@ for (nparset in nrow(parameters)){
   #setup progress bar
   pb <- txtProgressBar(title = "Simulation state", label = "0% done",min=0, max=num_iter, initial=0,style = 3)
 
-  if (makeplot) modelList<- list()
+  modelList<- list()
 
   tmp <- proc.time()
   for (t in 1:num_iter){
@@ -110,10 +110,8 @@ for (nparset in nrow(parameters)){
     #combine to Pinv
     road_netw[,Pinv:=Pe*(1-Pi)*state]
 
-    # update plot list
-    if (makeplot){
-      if (t%in%iter_plot) modelList[[as.character(t)]]<-road_netw
-    }
+    # store results
+    if (t%in%iter_save) modelList[[as.character(t)]]<-road_netw
 
     #update progress bar
     info <- sprintf("%d%% done", round((t/num_iter)*100))
@@ -126,8 +124,11 @@ for (nparset in nrow(parameters)){
   write.csv(x = road_netw,file = file.path(dir.name, "ModelResults.csv"),quote = F,row.names = F)
  # assign(x = "modelList",value = modelList,envir = .GlobalEnv)
 
-  cat("\n Creating maps \n")
-  if (makeplot) plotResults(list_results=modelList,dir_data=dir_data,netw_data=netw_data,data_plot=data_plot,save_dir=dir.name)
+
+  if (makeplot) {
+    cat("\n Creating maps \n")
+    plotResults(list_results=modelList,dir_data=dir_data,netw_data=netw_data,data_plot=data_plot,save_dir=dir.name)
+  }
 
   cat("\n Simulation complete \n")
   cat("\n Output files created in ", dir.name, "\n")

@@ -5,7 +5,7 @@ library(SearchTrees)
 library(rgdal)
 library(rgeos)
 
-setwd("/home/hanno/Bioinvasion/EBAspread/Data/RoadData")
+#setwd("/home/hanno/Bioinvasion/EBAspread/Data/RoadData")
 
 ## load shapefile of roads
 roads_shp <- readOGR(dsn="../RoadData",layer="20180704_BelastungLkwPkw_reproj",stringsAsFactors=F)

@@ -1,0 +1,10 @@
+#calculates the proportion of suitable landcover for establishment for each segment,
+# based on an existing list  (as the one provided in data/LClist.Rdata),
+# and land cover IDs.
+# Returns a data.table object with proportion of suitable habitat and segments IDs
+
+LCproportion <- function (List,LandCoverID){
+  X<-sapply(List, function(x) sum(x$prop[x$LC_ID%in%LandCoverID]))
+  X<-data.frame(ID=names(X), Pe=X, row.names=NULL,stringsAsFactors = FALSE)
+  return(data.table(X))
+}

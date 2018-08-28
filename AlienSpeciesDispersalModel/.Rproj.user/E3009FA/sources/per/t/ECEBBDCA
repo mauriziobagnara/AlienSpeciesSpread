@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1535469913794.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "4210535589",
+    "id" : "ECEBBDCA",
+    "lastKnownWriteTime" : 1535462753,
+    "last_content_update" : 1535462753,
+    "path" : "~/GitHub/AlienSpeciesSpread/AlienSpeciesDispersalModel/R/natural_kernel.R",
+    "project_path" : "R/natural_kernel.R",
+    "properties" : {
+        "cursorPosition" : "4,54",
+        "scrollLine" : "0",
+        "tempName" : "Untitled2"
+    },
+    "relative_order" : 7,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

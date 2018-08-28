@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1535469822828.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3459235061",
+    "id" : "6EF0A2CE",
+    "lastKnownWriteTime" : 1535468483,
+    "last_content_update" : 1535468483,
+    "path" : "~/GitHub/AlienSpeciesSpread/AlienSpeciesDispersalModel/R/getNeighborSegmCoord.R",
+    "project_path" : "R/getNeighborSegmCoord.R",
+    "properties" : {
+        "cursorPosition" : "27,21",
+        "scrollLine" : "14",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

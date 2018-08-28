@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1534412019565.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3389112249",
+    "id" : "AB421D57",
+    "lastKnownWriteTime" : 1535468649,
+    "last_content_update" : 1535468649903,
+    "path" : "~/GitHub/AlienSpeciesSpread/AlienSpeciesDispersalModel/R/SpreadModel.R",
+    "project_path" : "R/SpreadModel.R",
+    "properties" : {
+        "cursorPosition" : "75,68",
+        "scrollLine" : "66",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

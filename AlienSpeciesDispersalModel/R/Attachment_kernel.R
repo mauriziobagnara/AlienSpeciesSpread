@@ -1,4 +1,4 @@
-## attachment kernel. Models dispersal due to distance between nodes and pick-up probability
+## attachment kernel. Models dispersal due to distance between nodes .
 # currently represented as model 2 in Taylor et al 2012, requires distance in km
 
 # D: distance between nodes (km)
@@ -7,4 +7,4 @@
 # b: shape parameter
 # g: shape parameter
 
-f_attach <- function(D,a,b,g,p) return(exp(b*exp(a*(D^g)))*p)
+f_attach <- function(D,a,b,g,p) return(exp(b*exp(a*(D^g))))

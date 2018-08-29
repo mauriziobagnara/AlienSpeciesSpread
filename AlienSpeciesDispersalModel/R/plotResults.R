@@ -1,8 +1,5 @@
-plotResults<-function(list_results,dir_data,ShapeObj,save_dir){
-
-  cat("\n Loading maps data \n")
-
-    border_shp <- readOGR(dsn=file.path(dir_data,"gadm36_DEU_shp"),layer="gadm36_DEU_1",stringsAsFactors = F)
+plotResults<-function(list_results,dir_data,shapeObj,save_dir){
+ #  border_shp <- readOGR(dsn=file.path(dir_data,"gadm36_DEU_shp"),layer="gadm36_DEU_1",stringsAsFactors = F)
 
   #create palette
   norm<-seq(0,1,length.out=100001)
@@ -15,9 +12,11 @@ plotResults<-function(list_results,dir_data,ShapeObj,save_dir){
   for (i in 1:length(list_results)){
     cat("\n Creating map ",i,"out of ", length(list_results),"\n")
 
-    ShapeObj@data <-list_results[[i]]
-    ShapeObj@data$norm <- as.factor(round(ShapeObj@data$Pinv,4))
-    ShapeObj@data<-merge(ShapeObj@data,pal,by="norm",sort=FALSE)
+    shapeObj@data <-list_results[[i]]
+    shapeObj@data$norm <- as.factor(round(shapeObj@data$Pinv,5))
+
+    shapeObj@data<-merge(shapeObj@data,pal,by="norm",all.x=TRUE,sort=FALSE)
+
 
     #roads_shp_sub <- subset(roads_shp,ID%in%road_netw[Pinv>0,ID]) ## create the shapefile subset
 
@@ -33,16 +32,17 @@ plotResults<-function(list_results,dir_data,ShapeObj,save_dir){
 
     #   assign(x = "node_shp_sub",value = node_shp_sub, envir = .GlobalEnv)
 
-     png(filename = file.path(save_dir,(paste0("SpreadModel_map",sprintf("%04d", as.numeric(names(list_results)[i])),".png"))),width=7,height=8,units = "in",res=c(3*72))
-      op <- par(mar=rep(0,4))
-    plot(border_shp,axes=F,
+    png(filename = file.path(save_dir,(paste0("SpreadModel_map",sprintf("%04d", as.numeric(names(list_results)[i])),".png"))),width=7,height=8,units = "in",res=c(3*72))
+    # x11(width=7,height = 8)
+     op <- par(mar=rep(0,4))
+    plot(border_dataset,axes=F,
          panel.first=rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4]),lwd=0.1)
-    plot(ShapeObj,add=T,col=ShapeObj@data$color)
+    plot(shapeObj,add=T,col=shapeObj@data$color)
 
     # for (j in init_nodes) points(subset(node_shp_sub,Knoten_Num%in%j),pch=1,cex=1,col="blue",lwd=2)
     # mtext(t,side=3,line=-2)
     legend("topleft",c(paste0("Iter. #",names(list_results)[i])),box.col = "white",bg = "white")
-    plot(border_shp,axes=F,add=T,lwd=0.1)
+    plot(border_dataset,axes=F,add=T,lwd=0.1)
     dev.off()
   }
 }

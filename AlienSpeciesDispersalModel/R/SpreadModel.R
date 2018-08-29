@@ -1,9 +1,9 @@
 #needs matrix of parameters. should call parameters by name (via colnames(matrix)).
-#  Needs parallelitazion already? If so, folder structure needed to save results of each run separately.
+#  Needs parallelization already? If so, folder structure needed to save results of each run separately.
 # parallelization not needed yet for parameters, might be useful for networks at a later stage.
 
-SpreadModel <- function(parameters,
-                        dir_data, netw_data,Rdata_file=NULL,init_coords, num_iter,
+SpreadModel <- function(parameters,internal_dataset=TRUE,
+                        dir_data=NULL, netw_data=NULL,Rdata_file=NULL,init_coords, num_iter,
                         incl_attachment=T,incl_airflow=T,LandCoverID,max_dist=1000,
                         makeplot=F, iter_save=num_iter){
   ####################################################################
@@ -11,10 +11,11 @@ SpreadModel <- function(parameters,
   ### load shapefiles (takes a while!) ######################################################
 
   cat("\n Loading network \n")
-
-  if (file.exists(file.path(dir_data,Rdata_file))) load(file.path(dir_data,Rdata_file))
-  else {
-    border_shp <- readOGR(dsn=file.path(dir_data,"gadm36_DEU_shp"),layer="gadm36_DEU_1",stringsAsFactors = F)
+  if (internal_dataset==TRUE) {
+    roads_shp<-roads_dataset
+  } else if (file.exists(file.path(dir_data,Rdata_file))) {
+    load(file.path(dir_data,Rdata_file))
+  } else {
 
     roads_shp <- readOGR(dsn=dir_data,layer=netw_data,stringsAsFactors = F)
     #nodes_shp <- readOGR(dsn=dir_data,layer="20180209_KnotenNemobfstr",stringsAsFactors = F)
@@ -25,10 +26,11 @@ SpreadModel <- function(parameters,
     roads_shp@data$ID<-paste(roads_shp@data$Von_Knoten,roads_shp@data$Nach_Knote,sep="_")
     #  nodes_shp<-spTransform(nodes_shp, CRS("+proj=longlat +datum=WGS84"))
 
-    save(border_shp,roads_shp,
+    save(roads_shp,
          #nodes_shp,
          file=file.path(dir_data,"road_shp.Rdata"))
   }
+
   roads_shp@data$ID<-paste(roads_shp@data$Von_Knoten,roads_shp@data$Nach_Knote,sep="_")
   roads_shp@data[, c(4,6,7)]<-sapply(roads_shp@data[, c(4,6,7)], as.numeric)
 
@@ -62,7 +64,7 @@ SpreadModel <- function(parameters,
     dir.name<-file.path(getwd(),format(Sys.time(), "%d-%b-%Y %H-%M-%S"))
     dir.create(dir.name)
 
-    road_netw[,p_natural:=f_natural(Length,parameters[nparset,"nat1"])]
+    road_netw[,p_natural:=f_natural(Length,parameters[nparset,"nat1"],parameters[nparset,"nat2"] )]
 
     if (incl_attachment) {
       road_netw[,p_attach:=f_attach(Length,parameters[nparset,"att1"],parameters[nparset,"att2"],parameters[nparset,"att3"])]
@@ -81,12 +83,11 @@ SpreadModel <- function(parameters,
 
     cat("\n Calculating Probability of Establishment for each segment \n")
 
-    LCprop<-LCproportion(List=LClist,LandCoverID=LandCoverID) #requires LClist, provided as internal data in data/LClist.rda
-
-    setkey(road_netw,ID)
+    LCprop<-LCproportion(List=LClist,LandCoverID=Suitable_LandCoverID) #requires LClist, provided as internal data in data/LClist.rda
 #    road_netw[,list(road_netw,LCprop)]
 
-    road_netw<-road_netw[LCprop, on="ID"]
+    road_netw<- merge(road_netw,LCprop,by="ID", all=TRUE,sort=FALSE)
+    road_netw[,Pe:=Pe*parameters[nparset,"scale_est"]] # parameter for scaling down probability of establishment
 
     #road_netw[,Pe:=LCproportion(List=LCList,LandCoverID=LandCoverID)] #for test only! Needs additional merge() to match segment ID
 
@@ -132,7 +133,7 @@ SpreadModel <- function(parameters,
     tmp <- proc.time()
     for (t in 1:num_iter){
 
-      if("state" %in% colnames(road_netw)) road_netw[,state:=NULL]
+      if("state"%in%colnames(road_netw)) road_netw[,state:=NULL]
 
       node_state_sub <- node_state[state>0,] # take a subset of occupied nodes, required to speed up 'merge' below
       nextnodes <- road_netw[FromNode%in%node_state_sub$FromNode] # identify next nodes
@@ -147,7 +148,7 @@ SpreadModel <- function(parameters,
       road_netw<-merge(road_netw,node_state[,1:2],by="FromNode")
 
       #combine all probabilities to Pinv
-      road_netw[,Pinv:=Pe*(1-Pi)*state]
+      road_netw[!ID%in%init_segm,Pinv:=Pe*(1-Pi)*state]
 
       # store results
       if (t%in%iter_save) modelList[[as.character(t)]]<-road_netw
@@ -169,12 +170,14 @@ SpreadModel <- function(parameters,
 
   if (makeplot) {
     cat("\n Creating maps \n")
-    plotResults(list_results=modelList,dir_data=dir_data,ShapeObj=roads_shp,save_dir=dir.name)
+    plotResults(list_results=modelList,dir_data=dir_data,shapeObj=roads_shp,save_dir=dir.name)
   }
 
   cat("\n Simulation complete \n")
-  cat("\n Output files created in ", dir.name, "\n")
   print(proc.time() - tmp)
+
+  cat("\n Output files created in ", dir.name, "\n")
+
   return(modelList)
 }
 

@@ -159,6 +159,9 @@ SpreadModel <- function(parameters,
   }
   close(pb)
 
+  cat("\n Model calculation completed \n")
+  print(proc.time() - tmp)
+
   cat("\n Exporting final results \n")
   write.csv(x = road_netw,file = file.path(dir.name, "ModelResults.csv"),quote = F,row.names = F)
   # assign(x = "modelList",value = modelList,envir = .GlobalEnv)

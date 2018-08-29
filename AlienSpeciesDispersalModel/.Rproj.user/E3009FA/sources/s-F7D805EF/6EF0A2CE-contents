@@ -21,14 +21,14 @@ getNeighbourSegm<- function(shapeObj,init_coords,max_dist){
     ## get ID of nearest segment, the ID is the same as in road_shp (at least, it should be)
     ids<-c()
     for (i in 1:nrow(init_coords)){
-    neighbor <- SearchTrees::knnLookup(tree,newdat=init_coords[i,],k=100) # lookup nearest neighbour, 'k' determines the number of nearest neighbors
+    neighbor <- SearchTrees::knnLookup(tree,newdat=init_coords[i,],k=1000) # lookup nearest neighbour, 'k' determines the number of nearest neighbors
 
     D<-coords[neighbor,]
     D<-as.data.frame(D)
     D$dist<-geosphere::distm(D[,1:2], init_coords[i,],fun=distVincentyEllipsoid)
     ids<-c(ids,as.character(unique(D$ID[D$dist<max_dist])))
     }
-
-    return(ids)
+    if (length(ids) == 0) stop("No segments found within the specified maximum distance.")
+    return(unique(ids))
 }
 

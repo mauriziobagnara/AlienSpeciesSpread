@@ -36,7 +36,7 @@ par_air1<-0.211
 par_air2<-0.791
 
 ## natural dispersal kernel parameter
-par_nat1<- 0.3
+par_nat1<- 0.4 #arbitrary
 
  # build parameter matrix
 
@@ -55,8 +55,8 @@ Rdata_file<- "road_shp.Rdata"
 
 init_coords <- data.frame(Long=c(9.9938531,13.2862487),Lat=c(53.5396466,52.5588327)) # Hamburg Hafen & Berlin airport
 
-num_iter<- 200 # simulation steps
-iter_save <- round(seq(1,num_iter,length.out = 5),0) # used for plotting
+num_iter<- 10 # simulation steps
+iter_save <- round(seq(1,num_iter,length.out = 5),0)
 
 modelResults<-SpreadModel(parameters,
                           dir_data=dir_data, netw_data=netw_data,init_coords=init_coords, num_iter=num_iter,

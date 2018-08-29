@@ -5,14 +5,14 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "2833579508",
+    "hash" : "0",
     "id" : "8AF9795D",
-    "lastKnownWriteTime" : 1535467195,
-    "last_content_update" : 1535467195,
+    "lastKnownWriteTime" : 1535527368,
+    "last_content_update" : 1535527368628,
     "path" : "~/GitHub/AlienSpeciesSpread/AlienSpeciesDispersalModel/R/LCproportion.R",
     "project_path" : "R/LCproportion.R",
     "properties" : {
-        "cursorPosition" : "4,0",
+        "cursorPosition" : "7,75",
         "scrollLine" : "0",
         "tempName" : "Untitled2"
     },

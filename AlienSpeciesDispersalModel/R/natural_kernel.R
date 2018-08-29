@@ -1,7 +1,7 @@
 ## natural dispersal kernel. Models dispersal due tonatural processes between nodes.
 # currently represented as negative exponential, Nathan et al.2016, originally requires D in m, this function requires Km
 
-# D: distance between nodes (m)
+# D: distance between nodes (km)
 # a: shape parameter , >0 , mean dispersal distance=2a
 
 f_natural<-function(D,a) {

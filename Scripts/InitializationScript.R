@@ -40,7 +40,7 @@ par_nat1<- 1.06 # González-Martínez et al . 2006, P. pinaster
 par_nat2<- 0.5 #González-Martínez et al . 2006, P. pinaster.   b>1: thin-tailed ; b<1: fat-tailed. Values for b generally found from 0.3 to 0.6 (Nathan et al. 2012)
 
 ## establishment scale parameter
-par_est<- 1 #arbitrary. Should be <=1
+par_est<- .5 #arbitrary,<=1. Pioneer species should have high values (more likely to establish if the habitat is suitable), late succession species lower values.
 
  # build parameter matrix
 
@@ -48,7 +48,7 @@ parameters<-matrix(c(par_pickup,par_att1,par_att2,par_att3,par_air1,par_air2,par
 colnames(parameters)<-c("pickup_prob", "att1","att2","att3", "air1","air2","nat1","nat2","scale_est")
 
 #Set landcover IDs suitable for establishment
-Suitable_LandCoverID<-c(12:29) #select all and it should not make a difference
+Suitable_LandCoverID<-c(10:11,12:29) #select all and it should not make a difference
 
 #### Initialization info #################################
 
@@ -60,7 +60,7 @@ Rdata_file<- "road_shp.Rdata"
 init_coords <- data.frame(Long=c(9.9938531,13.2862487),Lat=c(53.5396466,52.5588327)) # Hamburg Hafen & Berlin airport
 
 num_iter<- 360 # simulation steps
-iter_save <- round(seq(1,num_iter,length.out = 3),0)
+iter_save <- round(seq(1,num_iter,length.out = 5),0)
 
 modelResults<-SpreadModel(parameters,internal_dataset=T,
                         # dir_data=dir_data, netw_data=netw_data, Rdata_file = Rdata_file,
@@ -71,7 +71,8 @@ modelResults<-SpreadModel(parameters,internal_dataset=T,
 
 # head(modelResults[[length(modelResults)]],10)
 
- # setwd("C:/Users/mbagnara/Desktop/BiK-F postDoc/Model/29-Aug-2018 09-52-31")
+
+ # setwd("C:/Users/mbagnara/Desktop/BiK-F postDoc/Model/31-Aug-2018 22-58-57")
  # system("C:/ImageMagick-7.0.8-Q16/convert.exe -delay 80 *.png ModelSpread.gif")
  # setwd(mainDir)
 

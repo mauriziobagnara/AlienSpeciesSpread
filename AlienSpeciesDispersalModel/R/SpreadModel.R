@@ -9,6 +9,7 @@ SpreadModel <- function(parameters,internal_dataset=TRUE,
   ####################################################################
 
   ### load shapefiles (takes a while!) ######################################################
+  tmp <- proc.time()
 
   cat("\n Loading network \n")
   if (internal_dataset==TRUE) {
@@ -130,10 +131,7 @@ SpreadModel <- function(parameters,internal_dataset=TRUE,
 
     modelList<- list()
 
-    tmp <- proc.time()
     for (t in 1:num_iter){
-
-      if("state"%in%colnames(road_netw)) road_netw[,state:=NULL]
 
       node_state_sub <- node_state[state>0,] # take a subset of occupied nodes, required to speed up 'merge' below
       nextnodes <- road_netw[FromNode%in%node_state_sub$FromNode] # identify next nodes
@@ -149,10 +147,15 @@ SpreadModel <- function(parameters,internal_dataset=TRUE,
 
       #combine all probabilities to Pinv
       road_netw[!ID%in%init_segm,Pinv:=Pe*(1-Pi)*state]
+      road_netw[,state_node:=state]
+      road_netw[,state:=NULL]
 
       # store results
-      if (t%in%iter_save) modelList[[as.character(t)]]<-road_netw
-
+      if (t%in%iter_save) {modelList[[as.character(t)]]<-road_netw
+      if ("state_node"%in%colnames(modelList[[as.character(t)]])==FALSE){
+        stop ("no state_node column")
+        }
+      }
       #update progress bar
       info <- sprintf("%d%% done", round((t/num_iter)*100))
       setTxtProgressBar(pb, t/(100)*100, label=info)
@@ -170,7 +173,7 @@ SpreadModel <- function(parameters,internal_dataset=TRUE,
 
   if (makeplot) {
     cat("\n Creating maps \n")
-    plotResults(list_results=modelList,dir_data=dir_data,shapeObj=roads_shp,save_dir=dir.name)
+    plotResults(list_results=modelList,shapeObj=roads_shp,save_dir=dir.name)
   }
 
   cat("\n Simulation complete \n")

@@ -4,4 +4,4 @@
 # a: shape parameter
 # T: numeric, amount of traffic (e.g. Num. cars/trucks)
 
-f_traff <- function(T,a) return(1-exp(-a*T))
+f_traff <- function(T,a){ return(1-exp(-a*T))}

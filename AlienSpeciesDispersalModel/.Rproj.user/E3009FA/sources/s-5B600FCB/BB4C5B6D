@@ -1,21 +1,21 @@
 {
     "collab_server" : "",
     "contents" : "",
-    "created" : 1535461447716.000,
+    "created" : 1536071687383.000,
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "832418026",
-    "id" : "74EB6CDF",
-    "lastKnownWriteTime" : 1535750654,
-    "last_content_update" : 1535750654504,
+    "hash" : "3302696141",
+    "id" : "BB4C5B6D",
+    "lastKnownWriteTime" : 1536071789,
+    "last_content_update" : 1536071789387,
     "path" : "~/GitHub/AlienSpeciesSpread/Scripts/InitializationScript.R",
     "project_path" : null,
     "properties" : {
-        "cursorPosition" : "77,0",
-        "scrollLine" : "66"
+        "cursorPosition" : "64,43",
+        "scrollLine" : "48"
     },
-    "relative_order" : 1,
+    "relative_order" : 3,
     "source_on_save" : false,
     "source_window" : "",
     "type" : "r_source"

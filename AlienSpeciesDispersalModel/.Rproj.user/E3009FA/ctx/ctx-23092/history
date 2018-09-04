@@ -1,3 +1,15 @@
+legend("topleft",c(paste0("Iter. #",names(list_results)[i])),box.col = "white",bg = "white")
+plot(border_dataset,axes=F,add=T)
+# legend part
+op <- par(mar=c(0.1,4.5,0.1,0.5))
+num_legend<-40
+color_legend <- rev(c("black","grey93", "forestgreen", colfunc(num_legend)))
+xl <- 1
+yb <- 1
+xr <- 1.5
+yt <- 2
+plot(NA,type="n",ann=FALSE,xlim=c(1,1.6),ylim=c(1,2),xaxt="n",yaxt="n",bty="n")
+rect(
 xl,
 head(seq(yb,yt,(yt-yb)/(num_legend+3)),-1),
 xr,
@@ -485,28 +497,16 @@ source('~/GitHub/AlienSpeciesSpread/Scripts/InitializationScript.R', encoding = 
 setwd("C:/Users/mbagnara/Desktop/BiK-F postDoc/Model/31-Aug-2018 22-58-57")
 system("C:/ImageMagick-7.0.8-Q16/convert.exe -delay 80 *.png ModelSpread.gif")
 setwd(mainDir)
-source('~/GitHub/AlienSpeciesSpread/Scripts/InitializationScript.R', encoding = 'UTF-8', echo=TRUE)
 library(AlienSpeciesDispersalModel)
-source('~/GitHub/AlienSpeciesSpread/Scripts/InitializationScript.R', encoding = 'UTF-8', echo=TRUE)
+bbx <- rgeos::readWKT("POLYGON((0 40, 20 40, 20 0, 0 0, 0 40))")
+?readWKT
+library(rgeos)
+rivers <- readWKT("MULTILINESTRING((15 5, 1 20, 200 25), (-5 -8,-10 -8,-15 -4), (0 10,100 5,20 230))")
+bbx <- readWKT("POLYGON((0 40, 20 40, 20 0, 0 0, 0 40))")
+rivers.cut <- gIntersection(rivers, bbx)
+plot(rivers, col="grey")
+plot(bbx, add=T, lty=2)
+plot(rivers.cut, add=T, col="blue")
 library(AlienSpeciesDispersalModel)
-plotResults(list_results = modelResults, shapeObj = roads_dataset,
-save_dir = "C:/Users/mbagnara/Desktop/BiK-F postDoc/Model/31-Aug-2018 22-58-57")
-source('~/GitHub/AlienSpeciesSpread/Scripts/InitializationScript.R', encoding = 'UTF-8', echo=TRUE)
-source('~/GitHub/AlienSpeciesSpread/Scripts/InitializationScript.R', encoding = 'UTF-8', echo=TRUE)
-source('~/GitHub/AlienSpeciesSpread/AlienSpeciesDispersalModel/R/plotResults.R', echo=TRUE)
-plotResults(list_results = modelResults, shapeObj = roads_dataset,
-save_dir = "C:/Users/mbagnara/Desktop/BiK-F postDoc/Model/04-Sep-2018 11-38-43")
-source('~/GitHub/AlienSpeciesSpread/AlienSpeciesDispersalModel/R/plotResults.R', echo=TRUE)
-plotResults(list_results = modelResults, shapeObj = roads_dataset,
-save_dir = "C:/Users/mbagnara/Desktop/BiK-F postDoc/Model/04-Sep-2018 11-38-43")
-source('~/GitHub/AlienSpeciesSpread/AlienSpeciesDispersalModel/R/plotResults.R', echo=TRUE)
-plotResults(list_results = modelResults, shapeObj = roads_dataset,
-save_dir = "C:/Users/mbagnara/Desktop/BiK-F postDoc/Model/04-Sep-2018 11-38-43")
-library(AlienSpeciesDispersalModel)
-library(AlienSpeciesDispersalModel)
-amb08<-readOGR(dsn = "C:\Users\mbagnara\Dropbox\AlienSpeciesSpread\Data\AlienSpecies\Ambrosia_MoritzvonderLippe\Ambrosia", layer="RoadNetworkAmb08")
-amb08<-readOGR(dsn = "C:/Users/mbagnara/Dropbox/AlienSpeciesSpread/Data/AlienSpecies/Ambrosia_MoritzvonderLippe/Ambrosia", layer="RoadNetworkAmb08")
-plot(amb08)
-x11(width=10,height = 8)
-plot(amb08)
-head(amb08@data)
+plot(roads_dataset)
+install.packages(maps)

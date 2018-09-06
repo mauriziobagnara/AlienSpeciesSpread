@@ -5,6 +5,3 @@
 # 
 # roads_sub<- rgeos::gIntersection(roads_dataset, bbx)
 # 
-
-
-SenecioData<-read.table("C:/Users/mbagnara/Dropbox/AlienSpeciesSpread/Data/AlienSpecies/Senecio_FrankSchurr/Senecio inaequidens spread data.txt",h=t)

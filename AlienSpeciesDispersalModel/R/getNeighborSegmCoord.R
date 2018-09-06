@@ -3,6 +3,7 @@
 # The function calculates a subset of 100 closest segment portions, then calculates their distance from the given coordinates
 # and returns the unique IDs of the segments with at least one portion at a distance lower than max_dist.
 # It is possible that no segments are close enough to the given coordinates. An Error message or warning should be returned if so!
+# init_coords MUST be a data.table object
 
 getNeighbourSegm<- function(shapeObj,init_coords,max_dist){
 
@@ -19,16 +20,19 @@ getNeighbourSegm<- function(shapeObj,init_coords,max_dist){
     tree <- SearchTrees::createTree(coords[,1:2]) # required to calculate the nearest neighbour for each set of coordinates
 
     ## get ID of nearest segment, the ID is the same as in road_shp (at least, it should be)
-    ids<-c()
+    idsList<-vector("list", length(as.numeric(unlist(unique(init_coords[,3])))))
+    names(idsList)<-as.numeric(unlist(unique(init_coords[,3])))
+
     for (i in 1:nrow(init_coords)){
-    neighbor <- SearchTrees::knnLookup(tree,newdat=init_coords[i,],k=1000) # lookup nearest neighbour, 'k' determines the number of nearest neighbors
+    neighbor <- SearchTrees::knnLookup(tree,newdat=init_coords[i,1:2],k=1000) # lookup nearest neighbour, 'k' determines the number of nearest neighbors
 
     D<-coords[neighbor,]
     D<-as.data.frame(D)
-    D$dist<-geosphere::distm(D[,1:2], init_coords[i,],fun=distVincentyEllipsoid)
-    ids<-c(ids,as.character(unique(D$ID[D$dist<max_dist])))
+    D$dist<-geosphere::distm(D[,1:2], init_coords[i,1:2],fun=distVincentyEllipsoid)
+
+    idsList[[as.character(init_coords[i,3])]]<-c(idsList[[as.character(init_coords[i,3])]],as.character(unique(D$ID[D$dist<max_dist])))
+    if (length(idsList[[as.character(init_coords[i,3])]]) == 0) warning("No segments found within the specified maximum distance.")
     }
-    if (length(ids) == 0) stop("No segments found within the specified maximum distance.")
-    return(unique(ids))
+        return(idsList)
 }
 

@@ -2,14 +2,47 @@
 #  Needs parallelization already? If so, folder structure needed to save results of each run separately.
 # parallelization not needed yet for parameters, might be useful for networks at a later stage.
 
-# file_init: either the name of the file to be created by InitializeSpread(),
-# or the FULL path of the file to be read in (created by InitzializeSpread() or ModelSpread() ).
-# In both cases, MUST BE an .Rdata file!
+#ARGUMENTS:
+# parameters: model parameter values. Must be provided in the same order
+#   and same form shown in InitializationScript.R. Column names and order matter!
+# internal_dataset: wheter to use the dataset internally provided with traffic data. Default TRUE.
+# dir_data:if internal_dataset=FALSE, the folder where to look for traffic data. Otherwise ignored.
+# netw_data: if internal_dataset=FALSE, the layer of shapefile to be imported. Otherwise ignored.
+# Rdata_file: if internal_dataset=FALSE, .Rdata file with the traffic network. Otherwise ignored,
+#   alternative to netw_data.
+# initialize: Whether the model should be initialized. Default TRUE.
+# save_init: if initialize=TRUE, should the initialization file be saved? Default TRUE.
+# file_init: if initialize=TRUE, the name of the file to be created by InitializeSpread().
+#   in the newly created folder (default  "init_data.rData" if save_init=TRUE). If initialize=FALSE, the FULL path
+#   of the file to be read in (created by InitializeSpread() or ModelSpread() ). MUST BE an .Rdata file.
+# init_coords: data.table object, with coordinates of invasion starting points and at which point
+#   during the simulation they should be considered (set to 0 for consideration from the very beginning).
+#   See InitializationScript.R for how to create it.
+# num_iter: number of model iterations
+# incl_attachment: if attachment to vehicles should be considered. Default TRUE.
+# incl_airflow: if vehicle airstream should be considered. Default TRUE.
+# LandCoverID: IDs of Suitable Land Cover. See databases LClegend and LClist.
+# max_dist: maximum distance (m) from initial coordinates for a segment to be considered infected.
+#   Default 1000.
+# makeplot: should model results be plotted as maps (could be a long process)? Default FALSE.
+# save_plot: logical. If TRUE, plots are created in the newly created folder as .png files.
+#   If FALSE, an x11() device is opened. Only considered if makeplot=TRUE. if
+# iter_save: which model iterations should be saved? By default=num_iter. If makeplot=TRUE, several maps
+#   will be created, one for each saved iteration.
+# restart: Should the simulation be resumed from previously saved results? Default FALSE. Results are saved automatically in restart.rData
+#   file_restart: if restart=TRUE, the FULL path of the file to be read in (previously created by ModelSpread() ).MUST BE an .Rdata file
+# export_results: Should results of the last iteration be exported in the newly created folder as a csv file?
+#   Default FALSE.
+# road_type: the types of roads to be considered in the simulation. Default c("all").
+
+
 
 SpreadModel <- function(parameters,internal_dataset=TRUE,initialize=TRUE,file_init="init_data.Rdata",save_init=TRUE,
                         dir_data=NULL, netw_data=NULL,Rdata_file=NULL,init_coords, num_iter,
                         incl_attachment=T,incl_airflow=T,LandCoverID,max_dist=1000,
-                        makeplot=F, iter_save=num_iter){
+                        makeplot=F, save_plot=T, iter_save=num_iter,
+                        restart=FALSE,file_restart=NULL,
+                        export_results=F,road_type=c("all")){
   ####################################################################
 
   tmp <- proc.time()
@@ -17,15 +50,18 @@ SpreadModel <- function(parameters,internal_dataset=TRUE,initialize=TRUE,file_in
   dir.name<-file.path(getwd(),format(Sys.time(), "%d-%b-%Y %H-%M-%S"))
   dir.create(dir.name)
 
-  if (initialize==TRUE) {
-  init_data<-InitializeSpread(init_coords=init_coords,max_dist=max_dist,save_init=save_init, save_dir=dir.name,file_init=file_init)
-  } else {cat("\n Loading initialization data \n")
+  if (restart==TRUE){ cat("\n Loading previous results \n")
+    load(file_restart)
+    init_data<-restart_data
+    } else if (restart==FALSE & initialize==TRUE) {
+  init_data<-InitializeSpread(init_coords=init_coords,max_dist=max_dist,road_type=road_type,save_init=save_init, save_dir=dir.name,file_init=file_init)
+  } else if (restart==FALSE & initialize==FALSE) {cat("\n Loading initialization data \n")
     load(file_init)
   }
-
-  road_netw<-init_data[[1]]
-  node_state<-init_data[[2]]
-  init_segm<-init_data[[3]]
+  roads_shp<-init_data$roads_shp
+  road_netw<-roads_shp@data
+  init_segm<-init_data$init_segm
+  node_state<-init_data$node_state
 
   ## add opposite direction (only mean values in both directions are provided so far)
   # road_netw_otherdir <- road_netw
@@ -66,8 +102,9 @@ SpreadModel <- function(parameters,internal_dataset=TRUE,initialize=TRUE,file_in
 
     cat("\n Calculating Probability of Establishment for each segment \n")
 
-    LCprop<-LCproportion(List=LClist,LandCoverID=Suitable_LandCoverID) #requires LClist, provided as internal data in data/LClist.rda
+    LCprop<-LCproportion(IDs=unique(road_netw$ID),List=LClist,LandCoverID=LandCoverID) #requires LClist, provided as internal data in data/LClist.rda
 #    road_netw[,list(road_netw,LCprop)]
+    if (restart==TRUE){road_netw[,Pe:=NULL]}
 
     road_netw<- merge(road_netw,LCprop,by="ID", all=TRUE,sort=FALSE)
     road_netw[,Pe:=Pe*parameters[nparset,"scale_est"]] # parameter for scaling down probability of establishment
@@ -98,8 +135,16 @@ SpreadModel <- function(parameters,internal_dataset=TRUE,initialize=TRUE,file_in
 
     for (t in 1:num_iter){
 
-      node_state_sub <- node_state[state>0,] # take a subset of occupied nodes, required to speed up 'merge' below
-      nextnodes <- road_netw[FromNode%in%node_state_sub$FromNode] # identify next nodes
+      if (t%in%names(init_segm)){
+        init_nodes <- road_netw[ID%in%init_segm[[as.character(t)]],c(FromNode,ToNode)]
+        node_state[FromNode%in%init_nodes,state:=1]
+        road_netw[ID%in%init_segm[[as.character(t)]],Pinv:=1]
+      }
+
+
+       node_state_sub <- node_state[state>0,] # take a subset of occupied nodes, required to speed up 'merge' below
+
+       nextnodes <- road_netw[FromNode%in%node_state_sub$FromNode] # identify next nodes
 
       nextnodes <- merge(nextnodes,node_state_sub,by="FromNode") # merge old states and next nodes
 
@@ -111,7 +156,8 @@ SpreadModel <- function(parameters,internal_dataset=TRUE,initialize=TRUE,file_in
       road_netw<-merge(road_netw,node_state[,1:2],by="FromNode")
 
       #combine all probabilities to Pinv
-      road_netw[!ID%in%init_segm,Pinv:=Pe*(1-Pi)*state]
+      iters<-as.numeric(names(init_segm))
+      road_netw[!ID%in%as.character(unlist(init_segm[c(which(iters<t))])),Pinv:=Pe*(1-Pi)*state]
       road_netw[,state_node:=state]
       road_netw[,state:=NULL]
 
@@ -130,21 +176,27 @@ SpreadModel <- function(parameters,internal_dataset=TRUE,initialize=TRUE,file_in
 
   cat("\n Model calculation completed \n")
   print(proc.time() - tmp)
+  cat("\n Output files being created in ", dir.name, "\n")
 
+  if (export_results) {
   cat("\n Exporting final results \n")
   write.csv(x = road_netw,file = file.path(dir.name, "ModelResults.csv"),quote = F,row.names = F)
   # assign(x = "modelList",value = modelList,envir = .GlobalEnv)
+  }
 
+  roads_shp@data<-road_netw
+
+  restart_data<-list(roads_shp,node_state,init_segm)
+  names(restart_data)<-c("roads_shp","node_state","init_segm")
+  save(restart_data, file = file.path(dir.name,"restart.Rdata"))
 
   if (makeplot) {
     cat("\n Creating maps \n")
-    plotResults(list_results=modelList,shapeObj=roads_dataset,save_dir=dir.name)
+    plotResults(list_results=modelList,shapeObj=roads_shp,save_plot=save_plot,save_dir=dir.name)
   }
 
   cat("\n Simulation complete \n")
   print(proc.time() - tmp)
-
-  cat("\n Output files created in ", dir.name, "\n")
 
   return(modelList)
 }

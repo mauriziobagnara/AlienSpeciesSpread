@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1536244084320.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1637550346",
+    "id" : "55FFF738",
+    "lastKnownWriteTime" : 1536240942,
+    "last_content_update" : 1536240942,
+    "path" : "~/GitHub/AlienSpeciesSpread/AlienSpeciesDispersalModel/R/InitializeSpread.R",
+    "project_path" : "R/InitializeSpread.R",
+    "properties" : {
+        "cursorPosition" : "84,0",
+        "scrollLine" : "71",
+        "tempName" : "Untitled2"
+    },
+    "relative_order" : 6,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

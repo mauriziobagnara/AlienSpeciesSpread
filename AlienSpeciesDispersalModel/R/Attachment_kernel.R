@@ -7,4 +7,4 @@
 # b: shape parameter
 # g: shape parameter
 
-f_attach <- function(D,a,b,g,p) return(exp(b*exp(a*(D^g))))
+f_attach <- function(D,a,b,g) return(exp(b*exp(a*(D^g))))

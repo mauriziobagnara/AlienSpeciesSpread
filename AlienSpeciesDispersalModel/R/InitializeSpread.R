@@ -1,11 +1,11 @@
-InitializeSpread<-function(internal_dataset=TRUE, save_init=TRUE, file_init,
+InitializeSpread<-function(internal_dataset=TRUE, save_init=TRUE, file_init,road_type=road_type,
                      dir_data=NULL, netw_data=NULL,Rdata_file=NULL,init_coords,max_dist,save_dir){
 
 ### load shapefiles (takes a while!) ######################################################
-tmp <- proc.time()
+tmp2 <- proc.time()
 
 cat("\n Loading network \n")
-if (internal_dataset==TRUE) {
+if (internal_dataset) { cat("\n Using internal database \n")
   roads_shp<-roads_dataset
 } else if (file.exists(file.path(dir_data,Rdata_file))) {
   load(file.path(dir_data,Rdata_file))
@@ -28,8 +28,10 @@ if (internal_dataset==TRUE) {
 roads_shp@data$ID<-paste(roads_shp@data$Von_Knoten,roads_shp@data$Nach_Knote,sep="_")
 roads_shp@data[, c(4,6,7)]<-sapply(roads_shp@data[, c(4,6,7)], as.numeric)
 
+if (all(road_type!=c("all"))) roads_shp<-roads_shp[roads_shp@data$Typ%in%road_type,]
+
 road_netw <- as.data.table(roads_shp@data)
-road_netw[,Traffic:=DTVLkw+ DTVPkw]
+road_netw[,Traffic:=round((DTVLkw+ DTVPkw)*365/12,0)]
 
 road_netw <- road_netw[,.(Von_Knoten,Nach_Knote,Laenge,Typ, Traffic,ID)]
 names(road_netw) <- c("FromNode","ToNode","Length","Type","Traffic","ID")
@@ -64,10 +66,10 @@ setkey(node_state,FromNode)
 cat("\n Identifying initial invasion segments \n")
 init_segm <- getNeighbourSegm(shapeObj=roads_shp,init_coords=init_coords,max_dist=max_dist)
 
-init_nodes <- road_netw[ID%in%init_segm,c(FromNode,ToNode)]
+init_nodes <- road_netw[ID%in%init_segm[["0"]],c(FromNode,ToNode)]
 node_state[FromNode%in%init_nodes,state:=1]
 
-road_netw[ID%in%init_segm,Pinv:=1]
+road_netw[ID%in%init_segm[["0"]],Pinv:=1]
 ### select next nodes #############################
 
 # ## first step ####
@@ -76,9 +78,12 @@ road_netw[ID%in%init_segm,Pinv:=1]
 # newstate <- nextnodes$state * a0 * nextnodes$Length * nextnodes$Traffic # prob to reach nodes
 # node_state[FromNode%in%nextnodes$ToNode,state:=newstate] # assigne new values
 
-init_data<-list(road_netw,node_state,init_segm)
+roads_shp@data<-road_netw
 
+init_data<-list(roads_shp,node_state,init_segm)
+names(init_data)<-c("roads_shp","node_state","init_segm")
 if (save_init) save(init_data, file = file.path(save_dir,file_init))
+print(proc.time() - tmp2)
 
 return(init_data)
 }

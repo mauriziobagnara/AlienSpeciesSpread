@@ -1,4 +1,4 @@
-plotResults<-function(list_results,shapeObj,save_dir){
+plotResults<-function(list_results,shapeObj,save_plot,save_dir){
   #  border_shp <- readOGR(dsn=file.path(dir_data,"gadm36_DEU_shp"),layer="gadm36_DEU_1",stringsAsFactors = F)
 
   num_col<-7
@@ -40,8 +40,10 @@ plotResults<-function(list_results,shapeObj,save_dir){
 
     #   assign(x = "node_shp_sub",value = node_shp_sub, envir = .GlobalEnv)
 
-    png(filename = file.path(save_dir,(paste0("SpreadModel_map",sprintf("%04d", as.numeric(names(list_results)[i])),".png"))),width=10,height = 8,units = "in",res=c(3*72))
-    #  x11(width=11,height = 8)
+    if (save_plot==T) {png(filename = file.path(save_dir,(paste0("SpreadModel_map",sprintf("%04d", as.numeric(names(list_results)[i])),".png"))),width=10,height = 8,units = "in",res=c(3*72))
+    } else { x11(width=11,height = 8)
+    }
+
     layout(matrix(1:3,nrow=1),widths=c(0.6,0.15,0.25))
 
     #actual map plotting
@@ -87,7 +89,7 @@ plotResults<-function(list_results,shapeObj,save_dir){
       las=2,cex=0.7)
     frame()
 
-    dev.off()
+    if (save_plot==T) dev.off()
     cat("\n Map",i,"completed \n")
     print(proc.time() - time_plot)
   }

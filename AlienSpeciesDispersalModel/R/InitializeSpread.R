@@ -63,13 +63,41 @@ node_state[,newarrivals:=as.numeric(newarrivals)]
 setkey(node_state,FromNode)
 
 
+###############################################################
 cat("\n Identifying initial invasion segments \n")
-init_segm <- getNeighbourSegm(shapeObj=roads_shp,init_coords=init_coords,max_dist=max_dist)
 
-init_nodes <- road_netw[ID%in%init_segm[["0"]],c(FromNode,ToNode)]
+init_segm <- getNeighbourSegmCoord(shapeObj=roads_shp,init_coords=init_coords,max_dist=max_dist)
+
+init_nodes <- road_netw[ID%in%init_segm,c(FromNode,ToNode)] # new
 node_state[FromNode%in%init_nodes,state:=1]
 
-road_netw[ID%in%init_segm[["0"]],Pinv:=1]
+# road_netw[ID%in%init_segm,Pinv:=1] # new, necessary???
+
+############################################################### # new
+cat("\n Calculate suitability of habitats \n")
+
+LCdata <- readRDS(file="AlienSpeciesDispersalModel/data/LandCocer_Roads_50m.rds")
+categories <- read.xlsx("AlienSpeciesDispersalModel/data/clc_legend_categories.xlsx",sheet=2) # load new categories
+categories <- categories[,c("GRID_CODE","LC_cat_ID","Species_preferences")]
+
+### assign new land cover categories and species preferences
+LCdata$LCtype <- categories$LC_cat_ID[match(LCdata$LC_ID,categories$GRID_CODE)] # assign new categories
+LCdata$SpecPref <- categories$Species_preferences[match(LCdata$LC_ID,categories$GRID_CODE)] # assign new categories
+LCdata$LCprop <- LCdata$prop * LCdata$SpecPref
+
+## calculate suitability of habitats for each segment
+LCdata <- as.data.table(LCdata)
+road_segm_suit <- LCdata[,sum(LCprop),by=list(LinkID)]
+road_segm_suit[V1>1,V1:=1]
+
+## merge land cover suitability and road_netw
+colnames(road_segm_suit) <- c("ID","LCsuit")
+
+setkey(road_segm_suit,ID)
+setkey(road_netw,ID)
+road_netw <- road_segm_suit[road_netw]
+
+
 ### select next nodes #############################
 
 # ## first step ####

@@ -39,8 +39,9 @@
 
 SpreadModel <- function(parameters,internal_dataset=TRUE,initialize=TRUE,file_init="init_data.Rdata",save_init=TRUE,
                         dir_data=NULL, netw_data=NULL,Rdata_file=NULL,init_coords, num_iter,
-                        incl_attachment=T,incl_airflow=T,LandCoverID,max_dist=1000,
-                        makeplot=F, save_plot=T, iter_save=num_iter,
+                        incl_attachment=T,incl_airflow=T,incl_natural=T,
+                        LandCoverID,max_dist=1000,
+                        makeplot=F, save_plot=F, iter_save=num_iter,
                         restart=FALSE,file_restart=NULL,
                         export_results=F,road_type=c("all")){
   ####################################################################
@@ -53,8 +54,8 @@ SpreadModel <- function(parameters,internal_dataset=TRUE,initialize=TRUE,file_in
   if (restart==TRUE){ cat("\n Loading previous results \n")
     load(file_restart)
     init_data<-restart_data
-    } else if (restart==FALSE & initialize==TRUE) {
-  init_data<-InitializeSpread(init_coords=init_coords,max_dist=max_dist,road_type=road_type,save_init=save_init, save_dir=dir.name,file_init=file_init)
+  } else if (restart==FALSE & initialize==TRUE) {
+    init_data<-InitializeSpread(init_coords=init_coords,max_dist=max_dist,road_type=road_type,save_init=save_init, save_dir=dir.name,file_init=file_init)
   } else if (restart==FALSE & initialize==FALSE) {cat("\n Loading initialization data \n")
     load(file_init)
   }
@@ -83,36 +84,49 @@ SpreadModel <- function(parameters,internal_dataset=TRUE,initialize=TRUE,file_in
     #get PI for segment
     cat("\n Calculating Probability of Introduction for each segment \n")
 
-    road_netw[,p_natural:=f_natural(Length,parameters[nparset,"nat1"],parameters[nparset,"nat2"] )]
+    if (incl_natural){
+      road_netw[,p_natural:=f_natural(Length,parameters[nparset,"nat1"],parameters[nparset,"nat2"] )]
+    }
 
     if (incl_attachment) {
       road_netw[,p_attach:=f_attach(Length,parameters[nparset,"att1"],parameters[nparset,"att2"],parameters[nparset,"att3"])]
-      road_netw[,p_attach:= 1-(1-p_attach)^(Traffic*parameters[nparset,"pickup_prob"])]
+      road_netw[,p_attach:= 1-(1-p_attach)^(Traffic*parameters[nparset,"att0"])]
     }
     if (incl_airflow) {
       road_netw[,p_airflow:=f_airflow(Length,parameters[nparset,"air1"],parameters[nparset,"air2"])]
-      road_netw[,p_airflow:= 1-(1-p_airflow)^(Traffic*parameters[nparset,"pickup_prob"])]
+      road_netw[,p_airflow:= 1-(1-p_airflow)^(Traffic*parameters[nparset,"air0"])] # new
     }
 
-    col_prob<-road_netw[,.SD,.SDcols=grep("p_",colnames(road_netw))]
+    road_netw[, Pi:=1-Reduce("*", 1-.SD), .SDcols=grep("p_",colnames(road_netw))] # new solution
 
-    road_netw[,Pi:=apply(col_prob,1,pUnion)] #prod by row
+    # col_prob<-road_netw[,.SD,.SDcols=grep("p_",colnames(road_netw))] # see above new solution
+    #
+    # road_netw[,Pi:=apply(col_prob,1,pUnion)] #prod by row
 
     #get PE for segment
 
     cat("\n Calculating Probability of Establishment for each segment \n")
 
-    LCprop<-LCproportion(IDs=unique(road_netw$ID),List=LClist,LandCoverID=LandCoverID) #requires LClist, provided as internal data in data/LClist.rda
+# new    # LCprop<-LCproportion(IDs=unique(road_netw$ID),List=LClist,LandCoverID=LandCoverID) #requires LClist, provided as internal data in data/LClist.rda
 #    road_netw[,list(road_netw,LCprop)]
-    if (restart==TRUE){road_netw[,Pe:=NULL]}
+# new    if (restart==TRUE){road_netw[,Pe:=NULL]}
 
-    road_netw<- merge(road_netw,LCprop,by="ID", all=TRUE,sort=FALSE)
-    road_netw[,Pe:=Pe*parameters[nparset,"scale_est"]] # parameter for scaling down probability of establishment
+# new    road_netw<- merge(road_netw,LCprop,by="ID", all=TRUE,sort=FALSE)
+     road_netw[,Pe:=1-exp(-parameters[nparset,"est0"]*LCsuit)] # parameter for scaling down probability of establishment # new
+
 
     #road_netw[,Pe:=LCproportion(List=LCList,LandCoverID=LandCoverID)] #for test only! Needs additional merge() to match segment ID
 
     ## set data.table key for road network (much faster)
+    road_netw_details <- road_netw[,c("ID","LCsuit","Length","Traffic","p_natural","p_attach","p_airflow")]
+    set( road_netw, j=which(colnames(road_netw) %in% c("LCsuit","Length","Type","Traffic","p_natural","p_attach","p_airflow")), value=NULL ) # new
     setkey(road_netw,FromNode)
+    road_netw[,stateFromNode:=0]          # state of FromNode
+    road_netw[,stateToNode:=0]    # state of ToNode
+    road_netw[,newarrivals:=0]    # pintro for single links
+    road_netw[FromNode%in%node_state[state>0,FromNode],stateFromNode:=1] # initialise states of FromNodes
+    road_netw[ToNode%in%node_state[state>0,FromNode],stateToNode:=1] # initialise states of ToNodes
+
 
     ##### start simulation ############################################
 
@@ -133,38 +147,57 @@ SpreadModel <- function(parameters,internal_dataset=TRUE,initialize=TRUE,file_in
 
     modelList<- list()
 
-    for (t in 1:num_iter){
+    for (t in 1:num_iter){#num_iter
 
-      if (t%in%names(init_segm)){
-        init_nodes <- road_netw[ID%in%init_segm[[as.character(t)]],c(FromNode,ToNode)]
-        node_state[FromNode%in%init_nodes,state:=1]
-        road_netw[ID%in%init_segm[[as.character(t)]],Pinv:=1]
-      }
+      # if (t%in%names(init_segm)){ # note: t can never be in init_segm ???
+      #   init_nodes <- road_netw[ID%in%init_segm[[as.character(t)]],c(FromNode,ToNode)]
+      #   node_state[FromNode%in%init_nodes,state:=1]
+      #   road_netw[ID%in%init_segm[[as.character(t)]],Pinv:=1]
+      # }
+      ind <- which(road_netw$stateFromNode>0 & road_netw$stateToNode<1) # select links with non-empty start node and non-filled end node
+      road_netw[ind,newarrivals:=   1-prod(1-(stateFromNode * Pi)) ,by=ToNode] # calculate pintro for each link
+      road_netw[ind,stateToNode:=1-(prod((1-stateToNode) * (1-newarrivals))),by=ToNode] # update ToNodes with old and new state
+
+      # road_netw[ind,stateToNode:=1-(prod((1-stateToNode) * (1-   1-prod(1-(stateFromNode * Pi)) ))),by=ToNode] # calculate pintro for each link
+
+      newstate <- unique(road_netw[ind,c("ToNode","stateToNode")],by="ToNode") # extract new state of ToNodes to update FromNodes states
+      setnames(newstate,c("FromNode","newstate")) # prepare file for merge (set names and key)
+      setkey(newstate,FromNode)
+      road_netw <- merge(road_netw,newstate,by="FromNode",all.x=T)
+
+      # road_netw <- newstate[road_netw] # merge road_netw and newstate to update FromNodes states
+      road_netw[newstate>0,stateFromNode:=newstate] # assigne new states to FromNodes
+      road_netw[,newstate:=NULL] # remove column to avoid columns with the same names
 
 
-       node_state_sub <- node_state[state>0,] # take a subset of occupied nodes, required to speed up 'merge' below
-
-       nextnodes <- road_netw[FromNode%in%node_state_sub$FromNode] # identify next nodes
-
-      nextnodes <- merge(nextnodes,node_state_sub,by="FromNode") # merge old states and next nodes
-
-      newstate <- nextnodes[,1-prod(1-(state * Pi)),by=ToNode] # combine all probs arriving at the same node from different nodes
-
-      node_state[.(newstate$ToNode),newarrivals:=newstate$V1] # add new state to nodes file
-      node_state[,state:=1-((1-state)*(1-newarrivals))]   # combine old and new state
-
-      road_netw<-merge(road_netw,node_state[,1:2],by="FromNode")
-
-      #combine all probabilities to Pinv
-      iters<-as.numeric(names(init_segm))
-      road_netw[!ID%in%as.character(unlist(init_segm[c(which(iters<t))])),Pinv:=Pe*(1-Pi)*state]
-      road_netw[,state_node:=state]
-      road_netw[,state:=NULL]
+      #  node_state_sub <- node_state[state>0,] # take a subset of occupied nodes, required to speed up 'merge' below
+      #
+      #  nextnodes <- road_netw[FromNode%in%node_state_sub$FromNode] # identify next nodes
+      #
+      # nextnodes <- merge(nextnodes,node_state_sub,by="FromNode") # merge old states and next nodes
+      #
+      # newstate <- nextnodes[,1-prod(1-(state * Pi)),by=ToNode] # combine all probs arriving at the same node from different nodes
+      #
+      # node_state[.(newstate$ToNode),newarrivals:=newstate$V1] # add new state to nodes file
+      # node_state[,state:=1-((1-state)*(1-newarrivals))]   # combine old and new state
+      #
+      # road_netw<-merge(road_netw,node_state[,1:2],by="FromNode")
+      #
+      # #combine all probabilities to Pinv
+      # iters<-as.numeric(names(init_segm))
+      # road_netw[!ID%in%as.character(unlist(init_segm[c(which(iters<t))])),Pinv:=Pe*(1-Pi)*state]
+      # road_netw[,state_node:=state]
+      # road_netw[,state:=NULL]
 
       # store results
-      if (t%in%iter_save) {modelList[[as.character(t)]]<-road_netw
-      if ("state_node"%in%colnames(modelList[[as.character(t)]])==FALSE){
-        stop ("no state_node column")
+      if (t%in%iter_save) {
+        road_netw[,Pinv:=Pe*Pi] # calculate total probability for links
+        setkey(road_netw,ID)
+        setkey(road_netw_details,ID)
+        road_netw_out <- road_netw_details[road_netw]
+        modelList[[as.character(t)]]<-road_netw_out
+        if ("stateFromNode"%in%colnames(modelList[[as.character(t)]])==FALSE){
+          stop ("no stateFromNode column")
         }
       }
       #update progress bar
@@ -173,7 +206,6 @@ SpreadModel <- function(parameters,internal_dataset=TRUE,initialize=TRUE,file_in
     }
   }
   close(pb)
-
   cat("\n Model calculation completed \n")
   print(proc.time() - tmp)
   cat("\n Output files being created in ", dir.name, "\n")

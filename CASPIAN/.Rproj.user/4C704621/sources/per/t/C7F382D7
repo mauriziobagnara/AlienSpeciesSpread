@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1535533920947.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3264290521",
+    "id" : "C7F382D7",
+    "lastKnownWriteTime" : 1535536185,
+    "last_content_update" : 1535536185492,
+    "path" : "~/Bioinvasion/EBAspread/Model/Initizialisation.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "50,76",
+        "scrollLine" : "44",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

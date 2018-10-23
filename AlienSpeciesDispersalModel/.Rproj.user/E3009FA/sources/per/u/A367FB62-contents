@@ -1,7 +1,0 @@
-# plot(border_dataset)
-# bbx <- rgeos::readWKT("POLYGON((0 56, 17 56, 17 43, 0 43,0 56))") 
-# 
-# plot(bbx,add=T,border="blue")
-# 
-# roads_sub<- rgeos::gIntersection(roads_dataset, bbx)
-# 

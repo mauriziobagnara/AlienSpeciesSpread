@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1541678802041.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "14F3773E",
+    "lastKnownWriteTime" : 1541679958,
+    "last_content_update" : 1541679958,
+    "path" : "C:/Users/mbagnara/Desktop/SenecioCalib_UnifPrior_NoEst0/CalibrationSenecio.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "147,22",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

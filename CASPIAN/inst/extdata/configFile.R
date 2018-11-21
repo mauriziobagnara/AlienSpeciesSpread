@@ -2,23 +2,24 @@
 
 ## attachment kernel parameters
 par_att0 <- 0.000001 ## pick-up probability
-par_att1 <- 0.6556
-par_att2 <- -0.05
-par_att3 <- 0.3311
-#f_attach <- function(D) exp(b*exp(c*(D^g)))
+par_att1 <- 0.6556  # parameter c in Taylor et al. 2012, Model 2
+par_att2 <-  -0.03675   # parameter b in Taylor et al. 2012, Model 2. Calculated as average of b, table 2, on paved roads
+par_att3 <- 0.3311  # parameter g in Taylor et al. 2012, Model 2
+
+
 
 ## traffic kernel parameters
 # traf1 <- 1e-06
 #f_traff <- function(T) 1-exp(-a*T)
 
 ## airflow kernel parameters
-par_air0<-0.1
-par_air1<-0.211
-par_air2<-2
+par_air0<-0.1 ## pick-up probability
+par_air1<-0.211 # parameter b in Von Der Lippe et al. 2013, Lognormal. Values for A. artemisiifolia
+par_air2<-0.791 # parameter a in Von Der Lippe et al. 2013, Lognormal. Values for A. artemisiifolia
 
 ## natural dispersal kernel parameter
-par_nat1<- 1.06 # González-Martínez et al . 2006, P. pinaster
-par_nat2<- 0.5 #González-Martínez et al . 2006, P. pinaster.   b>1: thin-tailed ; b<1: fat-tailed. Values for b generally found from 0.3 to 0.6 (Nathan et al. 2012)
+par_nat1<- 1.06 # González-Martínez et al . 2006, P. pinaster. Always >0
+par_nat2<- 0.5 #González-Martínez et al . 2006, P. pinaster.   >1: thin-tailed ; <1: fat-tailed. Values for b generally found from 0.3 to 0.6 (Nathan et al. 2012)
 
 ## establishment scale parameter
 par_est<- .5 #arbitrary,<=1. Pioneer species should have high values (more likely to establish if the habitat is suitable), late succession species lower values.

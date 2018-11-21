@@ -50,7 +50,7 @@ SpreadModel <- function(parameters,internal_dataset=TRUE,initialize=TRUE,file_in
 
   tmp <- proc.time()
 
-  dir.name<-file.path(getwd(),format(Sys.time(), "%d-%b-%Y %H-%M-%S"))
+  dir.name<-file.path(getwd(),paste0("CASPIAN_",format(Sys.time(), "%d-%b-%Y %H-%M-%S")))
   dir.create(dir.name)
 
   if (restart==TRUE){ cat("\n Loading previous results \n")
@@ -116,7 +116,8 @@ SpreadModel <- function(parameters,internal_dataset=TRUE,initialize=TRUE,file_in
 # new    if (restart==TRUE){road_netw[,Pe:=NULL]}
 
 # new    road_netw<- merge(road_netw,LCprop,by="ID", all=TRUE,sort=FALSE)
-     road_netw[,Pe:=1-exp(-parameters[nparset,"est0"]*LCsuit)] # parameter for scaling down probability of establishment # new
+     #road_netw[,Pe:=1-exp(-parameters[nparset,"est0"]*LCsuit)] # parameter for scaling down probability of establishment # new
+    road_netw[,Pe:=parameters[nparset,"est0"]*LCsuit] # parameter for scaling down probability of establishment # new
 
 
     #road_netw[,Pe:=LCproportion(List=LCList,LandCoverID=LandCoverID)] #for test only! Needs additional merge() to match segment ID

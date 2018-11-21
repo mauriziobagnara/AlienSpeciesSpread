@@ -1,0 +1,208 @@
+# ### CASPIAN CALIBRATION SCRIPT for Senecio
+rm(list=ls())
+graphics.off()
+library(CASPIAN)
+library(BayesianTools)
+
+mainDir<-"~/SenecioCalib_UnifPrior_YesEst0"
+# mainDir<-"/home/hanno/Bioinvasion/EBAspread/Model"
+setwd(mainDir)
+unlink(dir(mainDir, pattern = "CASPIAN_", full.names = TRUE), recursive = TRUE)
+
+load("PreCalibration.Rdata")
+
+# build parameter matrix
+parameters<-matrix(c(par_att0,par_att1,par_att2,par_att3,par_air1,par_air2,par_nat1,par_nat2,par_est,par_air0),nrow=1,byrow=T)
+colnames(parameters)<-c("att0", "att1","att2","att3", "air1","air2","nat1","nat2","est0","air0")
+
+# get default values and parameter range
+defaultValues <- parameters
+# for (i in ls()[grep("errpar", ls())]) defaultValues <- c(defaultValues, get(i))  #Commented, avoid likelihood sd if possible
+
+
+parRange<-data.frame(name=colnames(parameters),
+                      min= c(0,0,-0.176874,0,-1.22,0.38,0,0.0001,0.01,0),
+                     max= c(1,1,-0.000110, 1 , 2.35, 0.8, 5, 1,0.99,1))
+
+# for (i in rownames(parameterStandard)) {
+#   defaultValues[i] <- parameterStandard[rownames(parameterStandard) ==
+#                                           i]
+# }
+
+#select which parameters to calibrate
+parNames <- colnames(parameters)
+
+parSel <- c()
+for (i in parNames) parSel <- c(parSel, grep(i, colnames(defaultValues)))
+parValues <- c(defaultValues[parSel])
+
+npar <- length(parValues)
+
+#define prior range
+PriorRange<-data.frame(name=parNames,
+                       min_range=parRange$min[parRange$name%in%parNames],
+                       default=parValues,
+                       max_range=parRange$max[parRange$name%in%parNames])
+
+# build priors
+
+prior.min <- c()
+prior.max <- c()
+
+for (i in 1:npar) {
+  prior.min[i] <- c(PriorRange$min_range[which(PriorRange$name ==
+                                                 parNames[i])])
+  prior.max[i] <- c(PriorRange$max_range[which(PriorRange$name ==
+                                                 parNames[i])])
+}
+
+prior <- createUniformPrior(lower = prior.min, upper = prior.max, best = parValues)
+# ms<-apply(cbind(PriorRange$min_range,PriorRange$max_range),1,median)
+# prior <- createTruncatedNormalPrior(lower = prior.min, upper = prior.max,
+#                                     mean = parValues, sd= abs(ms*0.3)
+# )
+
+#define likelihood function
+likelihoodCASPIAN <- function(parameters) {
+  #  parameters<-BCsetup$prior$sampler(1)
+  if (is.vector(parameters))
+    parameters = matrix(parameters, nrow = 1)
+
+  p <- matrix(NA, nrow = nrow(parameters), ncol = length(defaultValues))
+
+  for (i in 1:nrow(parameters)) p[i, ] <- suppressWarnings(createMixWithDefaults(parameters[i,
+                                                                                            1:ncol(parameters)], defaultValues, parSel)
+  )
+  colnames(p) <- colnames(defaultValues)
+  # nerr <- length(grep("errpar", colnames(p)))
+
+  # pars <- p[, -tail(1:ncol(p), nerr)]
+  # ifelse(is.matrix(pars), yes = pars <- ListPar(pars),
+  #        no = pars <- ListPar(t(as.matrix(pars))))
+
+  # ifelse(parallelOption == FALSE, yes = parameterList <- pars[[1]],
+  #        no = parameterList <- pars)
+  #
+  invisible(capture.output(
+    outputCASPIAN <- SpreadModel(parameters=p,internal_dataset=internal_dataset,road_type=road_type,
+                                 initialize = FALSE, save_init = FALSE, file_init = file_init,
+                                 init_coords=init_coords_senecio, num_iter=num_iter,max_dist = 10^4,
+                                 incl_attachment=incl_attachment,incl_airflow=incl_airflow, incl_natural=incl_natural,
+                                 species_preferences=species_preferences,save.restart=FALSE,
+                                 makeplot = FALSE,save_plot=FALSE,iter_save = iter_save
+    )
+  ))
+  #
+  # if (parallelOption == FALSE) {
+  #   parameterList <- pars
+  #   outputLPJ <- list(outputLPJ)
+  #
+  nruns <- 1
+  # } else nruns <- length(parameterList)
+  #
+  likelihoods <- c()
+
+  for (nparticles in 1:nruns) {
+    sumll <- NA
+    for (nsteps in 1:length(outputCASPIAN)){
+
+      predicted <- outputCASPIAN[[nsteps]][,c("ID","Pinv")]
+      observed <- InvasionData[[nsteps]]
+      llobj <- merge(observed, predicted, all = FALSE,
+                     by = "ID")
+      res <- llobj$Pinv - llobj$Pinv_obs
+      # err <- as.numeric(p[nparticles, grep(out,colnames(p))])
+      err <- llobj$Pinv_obs*0.1
+      x <- dnorm(res, sd = err,
+                 log = T)
+      sumll <- sum(sumll, x, na.rm = TRUE)
+    }
+
+    likelihoods[nparticles] <- sumll
+  }
+
+  unlink(dir(mainDir, pattern = "CASPIAN_", full.names = TRUE), recursive = TRUE)
+  return(likelihoods)
+
+}
+
+#create BCsetup and define calibration settings
+numChains<-3
+numInternalParallel<-3
+
+iterations = 10^5
+BCsetup <- createBayesianSetup(likelihoodCASPIAN, prior,
+                               parallel = numInternalParallel, names = parNames)
+
+start <- BCsetup$prior$sampler(9)
+colnames(start) <- parNames
+DEStart <- list(start[1:3, ], start[4:6, ], start[7:9,])
+
+
+#run calibration
+cat("\n Calibration started ", as.character(Sys.time()) , "\n")
+T1<-proc.time()
+
+numCores<-numChains*numInternalParallel
+cl <- makeCluster(numCores, type = "SOCK")
+registerDoParallel(cl)
+
+resDEparallel<-foreach(n = 1:numChains, .packages = c("CASPIAN","BayesianTools") ) %dopar% {
+
+  BCsetup <- createBayesianSetup(likelihoodCASPIAN, prior, parallel = numInternalParallel, names = parNames)
+
+  # BCsettings <- list(iterations = iterations, nrChains = 1,
+  #                    startValue = DEStart[[n]], consoleUpdates = 1)
+
+  res <- runMCMC(BCsetup,
+                 sampler = "DEzs", settings = list(iterations = iterations, nrChains = 1,
+                                                   startValue = DEStart[[n]], consoleUpdates = 1))
+  return(res)
+}
+stopCluster(cl)
+
+resDE<-createMcmcSamplerList(list(resDEparallel[[1]],resDEparallel[[2]],resDEparallel[[3]]))
+
+T2<-proc.time()
+cat("\n Calibration completed ", as.character(Sys.time()) , "\n")
+print(T2-T1)
+
+cat("\n Calculating Maximum Likelihood model output \n")
+bestPars<- suppressWarnings(createMixWithDefaults(t(as.matrix(MAP(resDE)$parametersMAP)), defaultValues, parSel))
+outputCASPIAN <- SpreadModel(parameters=bestPars,internal_dataset=internal_dataset,road_type=road_type,
+                             initialize = FALSE, save_init = FALSE, file_init = file_init,
+                             init_coords=init_coords_senecio, num_iter=num_iter,max_dist = 10^4,
+                             incl_attachment=incl_attachment,incl_airflow=incl_airflow, incl_natural=incl_natural,
+                             species_preferences=species_preferences,save.restart=FALSE,
+                             makeplot = FALSE,save_plot=FALSE,iter_save = iter_save
+)
+
+save.image("CalibrationResults.rData")
+
+cat("\n Plotting Results \n")
+plotResults(list_results = outputCASPIAN,shapeObj = roads_dataset[roads_dataset@data$Typ%in%road_type,],save_plot = TRUE,save_dir = mainDir,data_coords = data_coords_senecio[,1:2])
+
+pdf("traceplot.pdf",width = 7,height = 10)
+plot(resDE,parametersOnly=FALSE)
+dev.off()
+pdf("correlationplot.pdf",width = 7,height = 10)
+correlationPlot(resDE)
+dev.off()
+sink("ResultSummary.txt")
+summary(resDE)
+sink()
+pdf("PriorsVsPosteriors.pdf",width = 10,height = 10)
+par(mfrow=c(3,3))
+SampleChain<-getSample(resDE,parametersOnly = TRUE,numSamples = 1000)
+SamplePrior<-BCsetup$prior$sampler(1000)
+for (i in 1:npar) {
+  densPrior<-density(SamplePrior[,i])
+  densChain<-density(SampleChain[,i])
+  hist(SamplePrior[,i],main=parNames[i],freq = FALSE,border = "white",xlab="Parameter value",
+       xlim=c(BCsetup$prior$lower[i],BCsetup$prior$upper[i]),ylim=c(0,max(c(densChain$y,densPrior$y))))
+  lines(densPrior$y~densPrior$x)
+  lines(densChain$y~densChain$x,col="red")
+}
+dev.off()
+
+cat("\n Done \n")

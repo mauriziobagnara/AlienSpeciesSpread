@@ -1,10 +1,10 @@
-plotResults<-function(list_results,shapeObj,save_plot,save_dir){
+plotResults<-function(list_results,shapeObj,save_plot,save_dir,data_coords=NULL){
   #  border_shp <- readOGR(dsn=file.path(dir_data,"gadm36_DEU_shp"),layer="gadm36_DEU_1",stringsAsFactors = F)
 
-  num_col<-7
+  num_col<-1
   #create palette
   norm<-seq(0,1,length.out=c(10^num_col+1))
-  colfunc <- colorRampPalette(c("yellow","orange","red","darkred"))
+  colfunc <- colorRampPalette(c("seagreen2", "gold", "orangered", "red3", "darkred"))
   color<-colfunc(10^num_col+1)
   pal<-data.table(norm=norm,color=color)
   pal$color<-as.character(pal$color)
@@ -48,20 +48,21 @@ plotResults<-function(list_results,shapeObj,save_plot,save_dir){
 
     #actual map plotting
     op <- par(mar=c(0.1,1,0.1,0.5))
-    plot(border_dataset,axes=F, #"burlywood4",
+    plot(border_dataset,axes=F, border="black",
          panel.first=rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4]))
-    plot(Not_intr,add=T,col="gray93")
-    plot(Intr,add=T,col="forestgreen")
+    plot(Not_intr,add=T,col="lightgray")
+    plot(Intr,add=T,col="darkgrey")
     plot(Inv,add=T,col=Inv@data$color)
-    # for (j in init_nodes) points(subset(node_shp_sub,Knoten_Num%in%j),pch=1,cex=1,col="blue",lwd=2)
+    # for (j in init_nodes) points(subset(node_shp_sub,Knoten_Num%in%j),pch=1,cex=1,col="darkgrey",lwd=2)
     # mtext(t,side=3,line=-2)
     legend("topleft",c(paste0("Iter. #",names(list_results)[i])),box.col = "white",bg = "white")
-    plot(border_dataset,axes=F,add=T)
+    plot(border_dataset,axes=F,add=T, border="black")
+   if (!is.null(data_coords)) points(data_coords,cex=2,lwd=3,col="blue")
 
     # legend part
      op <- par(mar=c(0.1,4.5,0.1,0.5))
     num_legend<-40
-    color_legend <- rev(c("black","grey93", "forestgreen", colfunc(num_legend)))
+    color_legend <- rev(c("black","lightgray", "darkgrey", colfunc(num_legend)))
     xl <- 1
     yb <- 1
     xr <- 1.5

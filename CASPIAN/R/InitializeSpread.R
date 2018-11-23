@@ -1,13 +1,13 @@
-InitializeSpread<-function(internal_dataset=TRUE, save_init=TRUE, file_init,road_type=road_type,
+InitializeSpread<-function(internal_dataset=TRUE, save_init=TRUE, file_init,netw_type=c("all"),
                      dir_data=NULL, netw_data=NULL,Rdata_file=NULL,init_coords,max_dist,save_dir,
-                     species_preferences){
+                     species_preferences,traffic_type=c("all")){
 
 ### load shapefiles (takes a while!) ######################################################
 tmp2 <- proc.time()
 
 cat("\n Loading network \n")
 if (internal_dataset) { cat("\n Using internal database \n")
-  roads_shp<-roads_dataset
+  roads_shp<-Road_Railway_Network
 } else if (file.exists(file.path(dir_data,Rdata_file))) {
   load(file.path(dir_data,Rdata_file))
 } else {
@@ -26,17 +26,25 @@ if (internal_dataset) { cat("\n Using internal database \n")
        file=file.path(dir_data,"road_shp.Rdata"))
 }
 
-roads_shp@data$ID<-paste(roads_shp@data$Von_Knoten,roads_shp@data$Nach_Knote,sep="_")
-roads_shp@data[, c(4,6,7)]<-sapply(roads_shp@data[, c(4,6,7)], as.numeric)
+#roads_shp@data$ID<-paste(roads_shp@data$Von_Knoten,roads_shp@data$Nach_Knote,sep="_")
+#roads_shp@data[, c(4,6,7)]<-sapply(roads_shp@data[, c(4,6,7)], as.numeric)
+colnames(roads_shp@data) <- c("FromNode","ToNode","Type","Length","cargo","passengers", "ID")
 
-if (all(road_type!=c("all"))) roads_shp<-roads_shp[roads_shp@data$Typ%in%road_type,]
+if (all(netw_type!=c("all"))) roads_shp<-roads_shp[roads_shp@data$Type%in%netw_type,]
 
 road_netw <- as.data.table(roads_shp@data)
-road_netw[,Traffic:=round((DTVLkw+ DTVPkw)*365/12,0)]
+road_netw[,Order:=c(1:nrow(roads_shp@data))]
 
-road_netw <- road_netw[,.(Von_Knoten,Nach_Knote,Laenge,Typ, Traffic,ID)]
-names(road_netw) <- c("FromNode","ToNode","Length","Type","Traffic","ID")
+suppressWarnings(
+if (all(traffic_type!=c("all"))) {
+  colTraffic<-which(colnames(road_netw)%in%traffic_type)
+  road_netw[,Traffic:=rowSums(road_netw[, ..colTraffic])]} else {
+                                                  road_netw[,Traffic:=rowSums(cbind(cargo,passengers))]}
+)
+road_netw[,Traffic:=round((Traffic)*365/12,0)]
+set(road_netw, j=which(colnames(road_netw) %in% c("cargo","passengers")), value=NULL )
 
+#road_netw <- road_netw[,.(Von_Knoten,Nach_Knote,Laenge,Typ, Traffic,ID)]
 
 ## add opposite direction (only mean values in both directions are provided so far)
 # road_netw_otherdir <- road_netw
@@ -77,7 +85,7 @@ node_state[FromNode%in%init_nodes,state:=1]
 ############################################################### # new
 cat("\n Calculating suitability of habitats \n")
 fpath<-system.file("extdata", package="CASPIAN")
-LCdata <- readRDS(file.path(fpath,"LandCocer_Roads_50m.rds"))
+LCdata <- readRDS(file.path(fpath,"LandCover_RailsRoadsInters_50m.rds"))
 categories <- read.xlsx(file.path(fpath,"clc_legend_categories.xlsx"),sheet=2) # load new categories
 categories <- categories[,c("GRID_CODE","LC_cat_ID")]
 categories<-as.data.table(categories)
@@ -111,7 +119,7 @@ road_netw <- road_segm_suit[road_netw]
 # nextnodes <- nextnodes[node_state, nomatch=0] # get states of all nodes
 # newstate <- nextnodes$state * a0 * nextnodes$Length * nextnodes$Traffic # prob to reach nodes
 # node_state[FromNode%in%nextnodes$ToNode,state:=newstate] # assigne new values
-
+setkey(road_netw,Order)
 roads_shp@data<-road_netw
 
 init_data<-list(roads_shp,node_state,init_segm)

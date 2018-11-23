@@ -24,7 +24,6 @@
 # incl_natural: if natural dispersal should be considered. Default TRUE.
 # LandCoverID: IDs of Suitable Land Cover. See databases LClegend and LClist.
 # max_dist: maximum distance (m) from initial coordinates for a segment to be considered infected.
-#   Default 1000.
 # makeplot: should model results be plotted as maps (could be a long process)? Default FALSE.
 # save_plot: logical. If TRUE, plots are created in the newly created folder as .png files.
 #   If FALSE, an x11() device is opened. Only considered if makeplot=TRUE. if
@@ -35,17 +34,17 @@
 #   file_restart: if restart=TRUE, the FULL path of the file to be read in (previously created by ModelSpread() ).MUST BE an .Rdata file
 # export_results: Should results of the last iteration be exported in the newly created folder as a csv file?
 #   Default FALSE.
-# road_type: the types of roads to be considered in the simulation. Default c("all").
+# netw_type: the types of roads to be considered in the simulation. Default c("all").
 
 
 
 SpreadModel <- function(parameters,internal_dataset=TRUE,initialize=TRUE,file_init="init_data.Rdata",save_init=TRUE,
                         dir_data=NULL, netw_data=NULL,Rdata_file=NULL,init_coords, num_iter,
                         incl_attachment=T,incl_airflow=T,incl_natural=T,
-                        species_preferences,max_dist=1000,
+                        species_preferences,max_dist,
                         makeplot=F, save_plot=F, iter_save=num_iter,
                         save.restart=FALSE,restart=FALSE,file_restart=NULL,
-                        export_results=F,road_type=c("all")){
+                        export_results=F,netw_type=c("all"),traffic_type=c("all")){
   ####################################################################
 
   tmp <- proc.time()
@@ -58,8 +57,8 @@ SpreadModel <- function(parameters,internal_dataset=TRUE,initialize=TRUE,file_in
     init_data<-restart_data
   } else if (restart==FALSE & initialize==TRUE) {
     init_data<-InitializeSpread(init_coords=init_coords,max_dist=max_dist,
-                                road_type=road_type,save_init=save_init, save_dir=dir.name,file_init=file_init,
-                                species_preferences=species_preferences)
+                                netw_type=netw_type,save_init=save_init, save_dir=dir.name,file_init=file_init,
+                                species_preferences=species_preferences,traffic_type=traffic_type)
   } else if (restart==FALSE & initialize==FALSE) {cat("\n Loading initialization data \n")
     load(file_init)
   }
@@ -94,11 +93,13 @@ SpreadModel <- function(parameters,internal_dataset=TRUE,initialize=TRUE,file_in
 
     if (incl_attachment) {
       road_netw[,p_attach:=f_attach(Length,parameters[nparset,"att1"],parameters[nparset,"att2"],parameters[nparset,"att3"])]
-      road_netw[,p_attach:= 1-(1-p_attach)^(Traffic*parameters[nparset,"att0"])]
+      road_netw[grep("S",road_netw$ID),p_attach:= 1-(1-p_attach)^(Traffic*parameters[nparset,"S_att0"])]
+      road_netw[grep("R",road_netw$ID),p_attach:= 1-(1-p_attach)^(Traffic*parameters[nparset,"R_att0"])]
     }
     if (incl_airflow) {
       road_netw[,p_airflow:=f_airflow(Length,parameters[nparset,"air1"],parameters[nparset,"air2"])]
-      road_netw[,p_airflow:= 1-(1-p_airflow)^(Traffic*parameters[nparset,"air0"])] # new
+      road_netw[grep("S",road_netw$ID),p_airflow:= 1-(1-p_airflow)^(Traffic*parameters[nparset,"S_air0"])] # new
+      road_netw[grep("R",road_netw$ID),p_airflow:= 1-(1-p_airflow)^(Traffic*parameters[nparset,"R_air0"])]
     }
 
     road_netw[, Pi:=1-Reduce("*", 1-.SD), .SDcols=grep("p_",colnames(road_netw))] # new solution
@@ -123,8 +124,8 @@ SpreadModel <- function(parameters,internal_dataset=TRUE,initialize=TRUE,file_in
     #road_netw[,Pe:=LCproportion(List=LCList,LandCoverID=LandCoverID)] #for test only! Needs additional merge() to match segment ID
 
     ## set data.table key for road network (much faster)
-    road_netw_details <- road_netw[,c("ID","LCsuit","Length","Traffic","p_natural","p_attach","p_airflow")]
-    set( road_netw, j=which(colnames(road_netw) %in% c("LCsuit","Length","Type","Traffic","p_natural","p_attach","p_airflow")), value=NULL ) # new
+    road_netw_details <- road_netw[,c("ID","LCsuit","Length","Traffic","p_natural","p_attach","p_airflow","Order")]
+    set( road_netw, j=which(colnames(road_netw) %in% c("LCsuit","Length","Type","Traffic","p_natural","p_attach","p_airflow","Order")), value=NULL ) # new
     setkey(road_netw,FromNode)
     road_netw[,stateFromNode:=0]          # state of FromNode
     road_netw[,stateToNode:=0]    # state of ToNode
@@ -201,6 +202,7 @@ SpreadModel <- function(parameters,internal_dataset=TRUE,initialize=TRUE,file_in
         setkey(road_netw,ID)
         setkey(road_netw_details,ID)
         road_netw_out <- road_netw_details[road_netw]
+        setkey(road_netw_out,Order)
         modelList[[as.character(t)]]<-road_netw_out
         if ("stateFromNode"%in%colnames(modelList[[as.character(t)]])==FALSE){
           stop ("no stateFromNode column")
@@ -218,11 +220,11 @@ SpreadModel <- function(parameters,internal_dataset=TRUE,initialize=TRUE,file_in
 
   if (export_results) {
   cat("\n Exporting final results \n")
-  write.csv(x = road_netw,file = file.path(dir.name, "ModelResults.csv"),quote = F,row.names = F)
+  write.csv(x = road_netw_out,file = file.path(dir.name, "ModelResults.csv"),quote = F,row.names = F)
   # assign(x = "modelList",value = modelList,envir = .GlobalEnv)
   }
 
-  roads_shp@data<-road_netw
+  roads_shp@data<-road_netw_out
 
   if (save.restart){
   restart_data<-list(roads_shp,node_state,init_segm)

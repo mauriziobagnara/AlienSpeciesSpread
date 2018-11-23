@@ -1,7 +1,8 @@
 #### Model parameters #################################
 
 ## attachment kernel parameters
-par_att0 <- 0.000001 ## pick-up probability
+par_att0_Roads <- 0.000001 ## pick-up probability on Roads
+par_att0_Railways<- 0.0000001 ## pick-up probability on Railways
 par_att1 <- 0.6556  # parameter c in Taylor et al. 2012, Model 2
 par_att2 <-  -0.03675   # parameter b in Taylor et al. 2012, Model 2. Calculated as average of b, table 2, on paved roads
 par_att3 <- 0.3311  # parameter g in Taylor et al. 2012, Model 2
@@ -13,7 +14,8 @@ par_att3 <- 0.3311  # parameter g in Taylor et al. 2012, Model 2
 #f_traff <- function(T) 1-exp(-a*T)
 
 ## airflow kernel parameters
-par_air0<-0.1 ## pick-up probability
+par_air0_Roads<-0.1 ## pick-up probability on Roads
+par_air0_Railways<-0.5 ## pick-up probability on Railways
 par_air1<-0.211 # parameter b in Von Der Lippe et al. 2013, Lognormal. Values for A. artemisiifolia
 par_air2<-0.791 # parameter a in Von Der Lippe et al. 2013, Lognormal. Values for A. artemisiifolia
 
@@ -42,14 +44,17 @@ Wetlands	<-	0   #LC_cat_ID=5
 # netw_data<-"20180704_BelastungLkwPkw" #network layer
 # Rdata_file<- "road_shp.Rdata"
 
+max_dist<-10^4 #maximum distance (m) from initial coordinates for a segment to be considered infected.
+
 
 init_coords <-data.frame(Long=c(9.9938531,13.2862487),Lat=c(53.5396466,52.5588327),Iter=c(0,20))  #data.frame(Long=c(9.9938531,13.2862487),Lat=c(53.5396466,52.5588327)) # Hamburg Hafen & Berlin airport
 
 
-num_iter<- 100 # simulation steps
-iter_save <- c(1,20,40) #round(seq(1,num_iter,length.out = 5),0)
+num_iter<- 50 # simulation steps
+iter_save <- c(1,50) #round(seq(1,num_iter,length.out = 5),0)
 
-road_type <- c("A","B") # types of road considered
+netw_type <- c("Rail","A") # types of network considered : "Rail" "A"    "B"    "L"    "S"    "K"    "F"    "G"    "X"    "R"    "k"
+traffic_type <- c("passengers", "cargo") # types of traffic considered : "cargo" (trucks and cargo trains), "passengers" (cars and passenger trains),   "all"
 
 internal_dataset<-TRUE  # wheter to use the dataset internally provided with traffic data
 initialize<-TRUE  # Whether the model should be initialized.
@@ -62,8 +67,8 @@ incl_attachment<-TRUE # if attachment to vehicles should be considered.
 incl_airflow<-TRUE # if vehicle airstream should be considered.
 incl_natural<-TRUE #if natural dispersal should be considered.
 
-makeplot<-TRUE #should model results be plotted as maps
-save_plot<-TRUE # If TRUE, plots are created in the newly created folder as .png files. If FALSE, an x11() device is opened. Only considered if makeplot=TRUE.
+makeplot<-FALSE #should model results be plotted as maps
+save_plot<-FALSE # If TRUE, plots are created in the newly created folder as .png files. If FALSE, an x11() device is opened. Only considered if makeplot=TRUE.
 
 save.restart=FALSE #should results be saved in order to resume the simulation at a later stage?
 restart=FALSE #Should the simulation be resumed from previously saved results? Results are saved automatically in restart.rData

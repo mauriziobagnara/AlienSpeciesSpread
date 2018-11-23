@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1542979877744.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "223780410",
+    "id" : "DC17AC8F",
+    "lastKnownWriteTime" : 1542980072,
+    "last_content_update" : 1542980072162,
+    "path" : "~/GitHub/AlienSpeciesSpread/CASPIAN/inst/extdata/configFile.R",
+    "project_path" : "inst/extdata/configFile.R",
+    "properties" : {
+        "cursorPosition" : "56,149",
+        "scrollLine" : "48",
+        "tempName" : "Untitled2"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

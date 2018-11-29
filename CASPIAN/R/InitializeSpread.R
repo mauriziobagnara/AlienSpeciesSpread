@@ -10,7 +10,7 @@ InitializeSpread<-function(Terrestrial_netw_data,Commodities_shape_data,
 tmp2 <- proc.time()
 
 cat("\n Loading network \n")
-Roads_shp<-Terrestrial_netw_data
+roads_shp<-Terrestrial_netw_data
 
 colnames(roads_shp@data) <- c("FromNode","ToNode","Type","Length","cargo","passengers", "ID")
 

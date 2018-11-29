@@ -5,7 +5,7 @@
     "dirty" : true,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "0",
+    "hash" : "3487059936",
     "id" : "4839438",
     "lastKnownWriteTime" : 1543327981,
     "last_content_update" : 1543426614599,
@@ -13,7 +13,7 @@
     "project_path" : "R/plotResults.R",
     "properties" : {
         "cursorPosition" : "77,9",
-        "scrollLine" : "73"
+        "scrollLine" : "0"
     },
     "relative_order" : 3,
     "source_on_save" : false,

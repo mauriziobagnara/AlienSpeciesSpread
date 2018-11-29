@@ -24,8 +24,17 @@ par_nat1<- 1.06 # González-Martínez et al . 2006, P. pinaster. Always >0
 par_nat2<- 0.5 #González-Martínez et al . 2006, P. pinaster.   >1: thin-tailed ; <1: fat-tailed. Values for b generally found from 0.3 to 0.6 (Nathan et al. 2012)
 
 ## establishment scale parameter
-par_est<- .5 #arbitrary,<=1. Pioneer species should have high values (more likely to establish if the habitat is suitable), late succession species lower values.
+par_est<- .7 #arbitrary,<=1. Pioneer species should have high values (more likely to establish if the habitat is suitable), late succession species lower values.
 
+## parameter for introduction by container
+par_cont<-10^5 #increase for lower container probability
+## parameter for introduction by pallet
+par_pall<-10^6 #increase for lower pallet probability
+
+#Treshold for container volume: all areas with number of containers arriving per year lower than Cont_treshold will not be considered
+Cont_treshold<-5
+#Treshold for pallets volume: all links with number of pallets exchanged per year lower than Pall_treshold will not be considered
+Pall_treshold<-300
 
 #Set landcover IDs suitability for establishment
 
@@ -39,6 +48,10 @@ Wetlands	<-	0   #LC_cat_ID=5
 # Suitable_LandCoverID<-c(10:11,12:29) #select all and it should not make a difference
 
 #### Initialization info #################################
+Terrestrial_netw_data<-Road_Railway_Network
+Commodities_shape_data<-Cargo_shp
+Pallets_netw_data<-PalletsFlow
+Container_netw_data<-ContainerFlow
 
 # dir_data<-"C:/Users/mbagnara/Dropbox/AlienSpeciesSpread/Data/TestDataRoad/20180314_Verkehrsbelastungen2015_DTV"
 # netw_data<-"20180704_BelastungLkwPkw" #network layer
@@ -51,14 +64,13 @@ init_coords <-data.frame(Long=c(9.9938531,13.2862487),Lat=c(53.5396466,52.558832
 
 
 num_iter<- 50 # simulation steps
-iter_save <- c(1,50) #round(seq(1,num_iter,length.out = 5),0)
+iter_save <- c(1,20,50) #round(seq(1,num_iter,length.out = 5),0)
 
-netw_type <- c("Rail","A") # types of network considered : "Rail" "A"    "B"    "L"    "S"    "K"    "F"    "G"    "X"    "R"    "k"
-traffic_type <- c("passengers", "cargo") # types of traffic considered : "cargo" (trucks and cargo trains), "passengers" (cars and passenger trains),   "all"
+netw_type <- c("Rail","A","B") # types of network considered : "Rail" "A"    "B"    "L"    "S"    "K"    "F"    "G"    "X"    "R"    "k"
+traffic_type <- c("all") # types of traffic considered : "cargo" (trucks and cargo trains), "passengers" (cars and passenger trains),   "all"
 
-internal_dataset<-TRUE  # wheter to use the dataset internally provided with traffic data
 initialize<-TRUE  # Whether the model should be initialized.
-save_init<-TRUE # if initialize=TRUE, should the initialization file be saved?
+save_init<-FALSE # if initialize=TRUE, should the initialization file be saved?
 file_init<- "init_data.Rdata" # if initialize=TRUE, the name of the file to be created by InitializeSpread().
 #   in the newly created folder (default  "init_data.rData" if save_init=TRUE). If initialize=FALSE, the FULL path
 #   of the file to be read in (created by InitializeSpread() or ModelSpread() ). MUST BE an .Rdata file.
@@ -66,8 +78,10 @@ file_init<- "init_data.Rdata" # if initialize=TRUE, the name of the file to be c
 incl_attachment<-TRUE # if attachment to vehicles should be considered.
 incl_airflow<-TRUE # if vehicle airstream should be considered.
 incl_natural<-TRUE #if natural dispersal should be considered.
+incl_containers<-TRUE #if container flow should be considered.
+incl_pallets<-TRUE #if pallets flow should be considered.
 
-makeplot<-FALSE #should model results be plotted as maps
+makeplot<-TRUE #should model results be plotted as maps
 save_plot<-FALSE # If TRUE, plots are created in the newly created folder as .png files. If FALSE, an x11() device is opened. Only considered if makeplot=TRUE.
 
 save.restart=FALSE #should results be saved in order to resume the simulation at a later stage?

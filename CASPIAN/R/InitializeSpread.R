@@ -1,33 +1,17 @@
-InitializeSpread<-function(internal_dataset=TRUE, save_init=TRUE, file_init,netw_type=c("all"),
+InitializeSpread<-function(Terrestrial_netw_data,Commodities_shape_data,
+                           Pallets_netw_data,Container_netw_data,
+                           save_init=TRUE, file_init,netw_type=c("all"),
                      dir_data=NULL, netw_data=NULL,Rdata_file=NULL,init_coords,max_dist,save_dir,
-                     species_preferences,traffic_type=c("all")){
+                     species_preferences,traffic_type=c("all"),
+                     incl_containers=T,Cont_treshold=0,
+                     incl_pallets=T,Pall_treshold=0){
 
-### load shapefiles (takes a while!) ######################################################
+### load and format shapefiles (takes a while!) ######################################################
 tmp2 <- proc.time()
 
 cat("\n Loading network \n")
-if (internal_dataset) { cat("\n Using internal database \n")
-  roads_shp<-Road_Railway_Network
-} else if (file.exists(file.path(dir_data,Rdata_file))) {
-  load(file.path(dir_data,Rdata_file))
-} else {
+Roads_shp<-Terrestrial_netw_data
 
-  roads_shp <- readOGR(dsn=dir_data,layer=netw_data,stringsAsFactors = F)
-  #nodes_shp <- readOGR(dsn=dir_data,layer="20180209_KnotenNemobfstr",stringsAsFactors = F)
-
-  cat("\n Converting coordinates to WGS84")
-  cat("\n")
-  roads_shp<-spTransform(roads_shp, CRS("+proj=longlat +datum=WGS84"))
-  roads_shp@data$ID<-paste(roads_shp@data$Von_Knoten,roads_shp@data$Nach_Knote,sep="_")
-  #  nodes_shp<-spTransform(nodes_shp, CRS("+proj=longlat +datum=WGS84"))
-
-  save(roads_shp,
-       #nodes_shp,
-       file=file.path(dir_data,"road_shp.Rdata"))
-}
-
-#roads_shp@data$ID<-paste(roads_shp@data$Von_Knoten,roads_shp@data$Nach_Knote,sep="_")
-#roads_shp@data[, c(4,6,7)]<-sapply(roads_shp@data[, c(4,6,7)], as.numeric)
 colnames(roads_shp@data) <- c("FromNode","ToNode","Type","Length","cargo","passengers", "ID")
 
 if (all(netw_type!=c("all"))) roads_shp<-roads_shp[roads_shp@data$Type%in%netw_type,]
@@ -46,41 +30,99 @@ set(road_netw, j=which(colnames(road_netw) %in% c("cargo","passengers")), value=
 
 #road_netw <- road_netw[,.(Von_Knoten,Nach_Knote,Laenge,Typ, Traffic,ID)]
 
-## add opposite direction (only mean values in both directions are provided so far)
-# road_netw_otherdir <- road_netw
-# names(road_netw_otherdir) <- c("FromNode","ToNode","Length","Type","Traffic")
-# road_netw_otherdir[,ToNode:=road_netw[,FromNode]]
-# road_netw_otherdir[,FromNode:=road_netw[,ToNode]]
-# road_netw <- rbind(road_netw,road_netw_otherdir)
+cat("\n Initializing node states \n")
 
-## transform measures into a single dispersal probability
-# Events are considered non mutually exclusive.
+road_netw[,newarrivals:=0]
+road_netw[,newarrivals:=as.numeric(newarrivals)]
+road_netw[,stateFromNode:=0]
+road_netw[,stateToNode:=0]
 
-#road_netw[,disp:=0]
+###############################################################
+# identify nodes in each cargo area if commodities are considered
+if  (incl_containers==TRUE | incl_pallets==TRUE) {
+  cat("\n Initializing Commodities Flow \n")
+  CargoAreas<-Commodities_shape_data
+  NodesCoords<-getNodesCoord(roads_shp)
+  coordinates(NodesCoords)<- ~ Long+Lat
+  proj4string(NodesCoords)<-proj4string(CargoAreas)
+  Nodes_CargoCell<-over(NodesCoords,CargoAreas)
+  Nodes_CargoCell<-as.data.table(cbind(Nodes_CargoCell,NodesCoords@data$nodeID))
+  setnames(Nodes_CargoCell,c(names(Nodes_CargoCell)[1:2],"NodeID"))
+}
 
-# if (include_traffic) {road_netw[,p_traff:=f_traff(Traffic,traf1)]
-# road_netw[,disp:=disp+p_traff]
-# }
+# identify Areas initialy invaded (for pallets only) from init_coords
+if (incl_pallets==TRUE){
+  init_coords2<-init_coords
+  coordinates(init_coords2)<- ~ Long+Lat
+  proj4string(init_coords2)<-proj4string(CargoAreas)
+  init_Areas<-as.character(over(init_coords2,CargoAreas)$AreaPallet)
+}
 
-### node file #####################################
-cat("\n Initialising node states \n")
-node_state <- as.data.table(unique(c(road_netw[,unique(FromNode)],road_netw[,unique(ToNode)])))
-node_state[,state:=0]
-node_state[,newarrivals:=0]
-names(node_state) <- c("FromNode","state","newarrivals")
-node_state[,newarrivals:=as.numeric(newarrivals)]
-setkey(node_state,FromNode)
+###############################################################
+## Pallets flow
+
+if  (incl_pallets==TRUE) {
+  cat("\n Initializing Pallets Flow \n")
+  #load pallet flow
+  Pallets_netw<-as.data.table(Pallets_netw_data)#need to update to provide external file here. Perhaps also in network file?
+  Pallets_netw<-Pallets_netw[FromArea!=ToArea,] #remove traffic from/to same area
+  Pallets_netw<-Pallets_netw[ToArea%in%Nodes_CargoCell$AreaPallet,] #subset, keep only areas where there are traffic nodes of the chosen netw_type
+
+  # remove links with number of exchanged pallets per year < than Pall_treshold:
+  if (Pall_treshold>0) { Pallets_netw<-Pallets_netw[numPallets>=Pall_treshold,]}
+
+   Pallets_netw[,numPallets:=numPallets/12] #monthly scale
+  #assign Area LinkIDs
+  Pallets_netw[,AreaLinkID:=paste(FromArea,ToArea,sep="_")]
+
+
+  # initialize state of Cargo Areas
+  Pallets_netw[,stateFromArea:=0]
+  Pallets_netw[,stateToArea:=0]
+  Pallets_netw[,newarrivals:=0]
+
+  # Update initial state of Cargo Areas
+  Pallets_netw[FromArea%in%init_Areas,stateFromArea:=1]
+  Pallets_netw[ToArea%in%init_Areas,stateToArea:=1]
+}
+###############################################################
+## Container Flow##
+
+if  (incl_containers==TRUE) {
+
+  cat("\n Initializing Containers Flow \n")
+  ##container Data
+  Container_netw<-as.data.table(Container_netw_data) #need to update to provide external file here. Perhaps also in network file?
+  Container_netw<-Container_netw[FromArea!=ToArea,] #remove traffic from/to same area
+  Container_netw<-Container_netw[ToArea%in%Nodes_CargoCell$AreaContainer,] #subset, keep only areas where there are traffic nodes of the chosen netw_type
+
+  # remove areas with number of arriving containers per year < than Cont_treshold:
+  if (Cont_treshold>0) { Container_netw<-Container_netw[numContainers>=Cont_treshold,]}
+
+  Container_netw[,numContainers:=numContainers/12] #monthly scale
+  Container_netw<-as.data.table(aggregate(numContainers ~ ToArea, Container_netw, sum))
+  Nodes_ContCell<-Nodes_CargoCell[,c(1,3)]
+  colnames(Nodes_ContCell)<-c("ToArea","FromNode")
+
+  setkey(Container_netw,ToArea)
+  setkey(Nodes_ContCell,ToArea)
+  Container_netw<-merge(Container_netw,Nodes_ContCell,by="ToArea")
+
+  #divide number of container per number of nodes in each area (assumes each nodes gets same number of containers)
+  NodesPerArea<-as.data.table(table(Container_netw$ToArea))
+  colnames(NodesPerArea)<-c("ToArea","numNodes")
+  setkey(NodesPerArea,ToArea)
+  Container_netw<-merge(Container_netw,NodesPerArea,by="ToArea")
+  Container_netw[,numContainers:=numContainers/numNodes]
+  set(Container_netw, j=which(colnames(Container_netw) %in% c("ToArea","numNodes")), value=NULL )
+}
+  setkey(road_netw,FromNode)
 
 
 ###############################################################
 cat("\n Identifying initial invasion segments \n")
 
 init_segm <- getNeighbourSegmCoord(shapeObj=roads_shp,init_coords=init_coords,max_dist=max_dist)
-
-init_nodes <- road_netw[ID%in%init_segm,c(FromNode,ToNode)] # new
-node_state[FromNode%in%init_nodes,state:=1]
-
-# road_netw[ID%in%init_segm,Pinv:=1] # new, necessary???
 
 ############################################################### # new
 cat("\n Calculating suitability of habitats \n")
@@ -111,20 +153,29 @@ setkey(road_segm_suit,ID)
 setkey(road_netw,ID)
 road_netw <- road_segm_suit[road_netw]
 
-
-### select next nodes #############################
-
-# ## first step ####
-# nextnodes <- road_netw[FromNode%in%node_state[state>0,FromNode]] # identify next nodes
-# nextnodes <- nextnodes[node_state, nomatch=0] # get states of all nodes
-# newstate <- nextnodes$state * a0 * nextnodes$Length * nextnodes$Traffic # prob to reach nodes
-# node_state[FromNode%in%nextnodes$ToNode,state:=newstate] # assigne new values
+###########################################################
+cat("\n Assembling initialization object \n")
 setkey(road_netw,Order)
 roads_shp@data<-road_netw
 
-init_data<-list(roads_shp,node_state,init_segm)
-names(init_data)<-c("roads_shp","node_state","init_segm")
-if (save_init) save(init_data, file = file.path(save_dir,file_init))
+if (incl_pallets==FALSE & incl_containers==FALSE){
+init_data<-list(roads_shp,init_segm)
+names(init_data)<-c("roads_shp","init_segm")
+} else if (incl_pallets==FALSE & incl_containers==TRUE){
+  init_data<-list(roads_shp,init_segm,Nodes_CargoCell,Container_netw)
+  names(init_data)<-c("roads_shp","init_segm","Nodes_CargoCell","Container_netw")
+}else if (incl_pallets==TRUE & incl_containers==FALSE){
+    init_data<-list(roads_shp,init_segm,Nodes_CargoCell,Pallets_netw,init_Areas)
+    names(init_data)<-c("roads_shp","init_segm","Nodes_CargoCell","Pallets_netw","init_Areas")
+}else if (incl_pallets==TRUE & incl_containers==TRUE){
+  init_data<-list(roads_shp,init_segm,Nodes_CargoCell,Container_netw,Pallets_netw,init_Areas)
+  names(init_data)<-c("roads_shp","init_segm","Nodes_CargoCell","Container_netw","Pallets_netw","init_Areas")
+}
+
+if (save_init) {
+  cat("\n Saving initialization object \n")
+  save(init_data, file = file.path(save_dir,file_init))
+}
 print(proc.time() - tmp2)
 
 return(init_data)

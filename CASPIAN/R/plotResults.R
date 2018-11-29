@@ -1,10 +1,10 @@
 plotResults<-function(list_results,shapeObj,save_plot,save_dir,data_coords=NULL){
   #  border_shp <- readOGR(dsn=file.path(dir_data,"gadm36_DEU_shp"),layer="gadm36_DEU_1",stringsAsFactors = F)
 
-  num_col<-1
+  num_col<-5
   #create palette
   norm<-seq(0,1,length.out=c(10^num_col+1))
-  colfunc <- colorRampPalette(c("seagreen2", "gold", "orangered", "red3", "darkred"))
+  colfunc <- colorRampPalette(c("green3","gold","darkorange","red3","darkred"))
   color<-colfunc(10^num_col+1)
   pal<-data.table(norm=norm,color=color)
   pal$color<-as.character(pal$color)
@@ -21,10 +21,8 @@ plotResults<-function(list_results,shapeObj,save_plot,save_dir,data_coords=NULL)
     shapeObj@data<-merge(shapeObj@data,pal,by="norm",all.x=TRUE,sort=FALSE)
 
     #isolating segments where species has been introduced, not introduced, or has invaded
-    Intr<-shapeObj[shapeObj@data$stateFromNode>0,]
-    Not_intr<-shapeObj[shapeObj@data$stateFromNode==0,]
-    Inv<-Intr[Intr@data$norm>0,]
-    Intr<-Intr[Intr@data$norm==0,]
+    Inv<-shapeObj[shapeObj@data$norm>0,]
+    Not_inv<-shapeObj[shapeObj@data$norm==0,]
 
     #roads_shp_sub <- subset(roads_shp,ID%in%road_netw[Pinv>0,ID]) ## create the shapefile subset
 
@@ -50,8 +48,7 @@ plotResults<-function(list_results,shapeObj,save_plot,save_dir,data_coords=NULL)
     op <- par(mar=c(0.1,1,0.1,0.5))
     plot(border_dataset,axes=F, border="black",
          panel.first=rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4]))
-    plot(Not_intr,add=T,col="lightgray")
-    plot(Intr,add=T,col="darkgrey")
+    plot(Not_inv,add=T,col="darkgray")
     plot(Inv,add=T,col=Inv@data$color)
     # for (j in init_nodes) points(subset(node_shp_sub,Knoten_Num%in%j),pch=1,cex=1,col="darkgrey",lwd=2)
     # mtext(t,side=3,line=-2)
@@ -62,7 +59,7 @@ plotResults<-function(list_results,shapeObj,save_plot,save_dir,data_coords=NULL)
     # legend part
      op <- par(mar=c(0.1,4.5,0.1,0.5))
     num_legend<-40
-    color_legend <- rev(c("black","lightgray", "darkgrey", colfunc(num_legend)))
+    color_legend <- rev(c("black","darkgray", colfunc(num_legend)))
     xl <- 1
     yb <- 1
     xr <- 1.5
@@ -70,23 +67,22 @@ plotResults<-function(list_results,shapeObj,save_plot,save_dir,data_coords=NULL)
     plot(NA,type="n",ann=FALSE,xlim=c(1,1.7),ylim=c(1,2),xaxt="n",yaxt="n",bty="n")
     rect(
       xl,
-      head(seq(yb,yt,(yt-yb)/(num_legend+3)),-1),
+      head(seq(yb,yt,(yt-yb)/(num_legend+2)),-1),
       xr,
-      tail(seq(yb,yt,(yt-yb)/(num_legend+3)),-1),
+      tail(seq(yb,yt,(yt-yb)/(num_legend+2)),-1),
       col= color_legend,
       border = color_legend
     )
     mtext(
       c("Administrative border",
-        "Species not introduced",
-        "Species introduced but not established",
+        "Species has not invaded",
         "Species has invaded with probability = Pinv"),
       side=4,
-      at= c(rev(seq(yb,yt,(yt-yb)/(num_legend+3)))-c(1/(3*num_legend)))[c(1:4)],
+      at= c(rev(seq(yb,yt,(yt-yb)/(num_legend+2)))-c(1/(3*num_legend)))[c(1:3)],
       las=2,cex=0.7)
     mtext(
       paste("Pinv =",seq(1,0,by=-0.1),sep=" "),
-      side=2,at= c(seq(yb,yt,(yt-yb)/(num_legend+3))[seq(1,(num_legend+1),by=c(num_legend/10))]),
+      side=2,at= c(seq(yb,yt,(yt-yb)/(num_legend+2))[seq(1,(num_legend+1),by=c(num_legend/10))]),
       las=2,cex=0.7)
     frame()
 
@@ -95,3 +91,6 @@ plotResults<-function(list_results,shapeObj,save_plot,save_dir,data_coords=NULL)
     print(proc.time() - time_plot)
   }
 }
+
+
+#plotResults(list_results = results[3],shapeObj = Road_Railway_Network[Road_Railway_Network@data$Typ%in%netw_type,],save_plot = FALSE)

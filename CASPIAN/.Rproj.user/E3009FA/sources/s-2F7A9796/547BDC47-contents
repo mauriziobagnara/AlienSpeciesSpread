@@ -1,6 +1,6 @@
 InitializeSpread<-function(Terrestrial_netw_data,Commodities_shape_data,
                            Pallets_netw_data,Container_netw_data,
-                           save_init=TRUE, file_init,netw_type=c("all"),
+                           file_init="init_data.Rdata",save_init=TRUE,netw_type=c("all"),
                      dir_data=NULL, netw_data=NULL,Rdata_file=NULL,init_coords,max_dist,save_dir,
                      species_preferences,traffic_type=c("all"),
                      incl_containers=T,Cont_treshold=0,
@@ -27,6 +27,13 @@ if (all(traffic_type!=c("all"))) {
 )
 road_netw[,Traffic:=round((Traffic)*365/12,0)]
 set(road_netw, j=which(colnames(road_netw) %in% c("cargo","passengers")), value=NULL )
+
+if (any(road_netw[,Length==0])){ #assign length of 10m to segments with length 0
+  options(warn=1)
+  road_netw[Length==0,Length:=0.01]
+  warning("Links of length 0 detected in Terrestrial_netw_data. Their length has been set to 10m. ")
+  options(warn=0)
+}
 
 #road_netw <- road_netw[,.(Von_Knoten,Nach_Knote,Laenge,Typ, Traffic,ID)]
 

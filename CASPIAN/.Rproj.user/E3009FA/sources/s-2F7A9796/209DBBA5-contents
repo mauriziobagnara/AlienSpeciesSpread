@@ -1,4 +1,5 @@
 #### Model parameters #################################
+runTerrestrialModel<-TRUE
 
 ## attachment kernel parameters
 par_att0_Roads <- 0.000001 ## pick-up probability on Roads
@@ -20,7 +21,7 @@ par_air1<-0.211 # parameter b in Von Der Lippe et al. 2013, Lognormal. Values fo
 par_air2<-0.791 # parameter a in Von Der Lippe et al. 2013, Lognormal. Values for A. artemisiifolia
 
 ## natural dispersal kernel parameter
-par_nat1<- 1.06 # González-Martínez et al . 2006, P. pinaster. Always >0
+par_nat1<- 0.0001 # González-Martínez et al . 2006, P. pinaster. Always >0
 par_nat2<- 0.5 #González-Martínez et al . 2006, P. pinaster.   >1: thin-tailed ; <1: fat-tailed. Values for b generally found from 0.3 to 0.6 (Nathan et al. 2012)
 
 ## establishment scale parameter
@@ -44,6 +45,23 @@ Pastures	<-	0.1 #LC_cat_ID=3
 Forests	<-	0   #LC_cat_ID=4
 Wetlands	<-	0   #LC_cat_ID=5
 
+# Waterways Parameters:
+runAquaticModel<-TRUE
+#natural dispersal: see  Radinger & Wolter 2013, eq. 1
+par_mobile_proportion<-0.5 #proportion of the population that actively moves
+par_stat_speed<-0 # speed for stationary component of population. In absence of stream velocity, species that do not swim do not spread naturally.
+par_mob_speed<- 5 # speed for mobile component of population
+
+#hull-fouling: see Sylvester 2011, eq. 9
+par_a <-5.85 * 10^-20
+par_c1 <-20.9
+par_g <-1.03 * 10^-10
+par_c2 <-3.63
+par_b <-3.15 * 10^-7
+par_c3 <-2.39
+Port_time<-0 #Time spent in port
+Paint_time<-0 # time since last antifouling painting
+
 
 # Suitable_LandCoverID<-c(10:11,12:29) #select all and it should not make a difference
 
@@ -52,6 +70,7 @@ Terrestrial_netw_data<-Road_Railway_Network
 Commodities_shape_data<-Cargo_shp
 Pallets_netw_data<-PalletsFlow
 Container_netw_data<-ContainerFlow
+Water_netw_data<-Ship_Travel_Netw
 
 # dir_data<-"C:/Users/mbagnara/Dropbox/AlienSpeciesSpread/Data/TestDataRoad/20180314_Verkehrsbelastungen2015_DTV"
 # netw_data<-"20180704_BelastungLkwPkw" #network layer
@@ -63,10 +82,10 @@ max_dist<-10^4 #maximum distance (m) from initial coordinates for a segment to b
 init_coords <-data.frame(Long=c(9.9938531,13.2862487),Lat=c(53.5396466,52.5588327),Iter=c(0,20))  #data.frame(Long=c(9.9938531,13.2862487),Lat=c(53.5396466,52.5588327)) # Hamburg Hafen & Berlin airport
 
 
-num_iter<- 50 # simulation steps
-iter_save <- c(1,20,50) #round(seq(1,num_iter,length.out = 5),0)
+num_iter<- 20 # simulation steps
+iter_save <- c(1,10,20) #round(seq(1,num_iter,length.out = 5),0)
 
-netw_type <- c("Rail","A","B") # types of network considered : "Rail" "A"    "B"    "L"    "S"    "K"    "F"    "G"    "X"    "R"    "k"
+netw_type <- c("Rail", "A") # types of network considered : "Rail" "A"    "B"    "L"    "S"    "K"    "F"    "G"    "X"    "R"    "k"
 traffic_type <- c("all") # types of traffic considered : "cargo" (trucks and cargo trains), "passengers" (cars and passenger trains),   "all"
 
 initialize<-TRUE  # Whether the model should be initialized.
@@ -78,11 +97,14 @@ file_init<- "init_data.Rdata" # if initialize=TRUE, the name of the file to be c
 incl_attachment<-TRUE # if attachment to vehicles should be considered.
 incl_airflow<-TRUE # if vehicle airstream should be considered.
 incl_natural<-TRUE #if natural dispersal should be considered.
-incl_containers<-TRUE #if container flow should be considered.
-incl_pallets<-TRUE #if pallets flow should be considered.
+incl_containers<-FALSE #if container flow should be considered.
+incl_pallets<-FALSE #if pallets flow should be considered.
+
+incl_natural_water<-TRUE #if natural dispersal along rivers should be considered.
+incl_biofouling<-TRUE #if hull-fouling dispersal along rivers should be considered.
 
 makeplot<-TRUE #should model results be plotted as maps
-save_plot<-FALSE # If TRUE, plots are created in the newly created folder as .png files. If FALSE, an x11() device is opened. Only considered if makeplot=TRUE.
+save_plot<-TRUE # If TRUE, plots are created in the newly created folder as .png files. If FALSE, an x11() device is opened. Only considered if makeplot=TRUE.
 
 save.restart=FALSE #should results be saved in order to resume the simulation at a later stage?
 restart=FALSE #Should the simulation be resumed from previously saved results? Results are saved automatically in restart.rData

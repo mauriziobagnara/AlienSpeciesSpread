@@ -3,7 +3,7 @@ plotResults<-function(list_results,shapeObj,save_plot,save_dir,data_coords=NULL)
 
   num_col<-5
   #create palette
-  norm<-seq(0,1,length.out=c(10^num_col+1))
+  norm<-as.character(seq(0,1,length.out=c(10^num_col+1)))
   colfunc <- colorRampPalette(c("green3","gold","darkorange","red3","darkred"))
   color<-colfunc(10^num_col+1)
   pal<-data.table(norm=norm,color=color)
@@ -16,11 +16,13 @@ plotResults<-function(list_results,shapeObj,save_plot,save_dir,data_coords=NULL)
     time_plot<-proc.time()
 
     shapeObj@data <- list_results[[i]]
-    shapeObj@data$norm <- round(shapeObj@data$Pinv,num_col)
+
+    shapeObj@data$norm <- as.character(round(shapeObj@data$Pinv,num_col))
 
     shapeObj@data<-merge(shapeObj@data,pal,by="norm",all.x=TRUE,sort=FALSE)
 
     #isolating segments where species has been introduced, not introduced, or has invaded
+    shapeObj@data$norm<-as.numeric(shapeObj@data$norm)
     Inv<-shapeObj[shapeObj@data$norm>0,]
     Not_inv<-shapeObj[shapeObj@data$norm==0,]
 

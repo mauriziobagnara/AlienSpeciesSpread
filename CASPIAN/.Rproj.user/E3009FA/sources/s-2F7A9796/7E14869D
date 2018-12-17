@@ -1,21 +1,21 @@
 {
     "collab_server" : "",
     "contents" : "",
-    "created" : 1543253755003.000,
-    "dirty" : true,
+    "created" : 1544990041050.000,
+    "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "3487059936",
-    "id" : "4839438",
-    "lastKnownWriteTime" : 1543327981,
-    "last_content_update" : 1543426614599,
+    "hash" : "3981096512",
+    "id" : "7E14869D",
+    "lastKnownWriteTime" : 1545053027,
+    "last_content_update" : 1545053027519,
     "path" : "~/GitHub/AlienSpeciesSpread/CASPIAN/R/plotResults.R",
     "project_path" : "R/plotResults.R",
     "properties" : {
-        "cursorPosition" : "77,9",
-        "scrollLine" : "0"
+        "cursorPosition" : "57,4",
+        "scrollLine" : "44"
     },
-    "relative_order" : 3,
+    "relative_order" : 8,
     "source_on_save" : false,
     "source_window" : "",
     "type" : "r_source"

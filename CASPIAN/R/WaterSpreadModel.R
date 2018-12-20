@@ -38,16 +38,16 @@
 
 
 WaterSpreadModel <- function(parameters,init_obj,
-                        Water_netw_data,
-                        dir_data=NULL, netw_data=NULL,Rdata_file=NULL,init_coords, num_iter,
-                        incl_biofouling=T,incl_natural_water=T,
-                        #species_preferences,
-                        max_dist,Port_time=NA,Paint_time=NA,
-                        iter_save=num_iter,
-                        save.restart=FALSE,restart=FALSE,file_restart=NULL,
-                        export_results=F,
-                        #netw_type=c("all"),
-                        traffic_type=c("all")){
+                             Water_netw_data,
+                             dir_data=NULL, netw_data=NULL,Rdata_file=NULL,init_coords, num_iter,
+                             incl_biofouling=T,incl_natural_water=T,
+                             #species_preferences,
+                             max_dist,Port_time=NA,Paint_time=NA,
+                             iter_save=num_iter,
+                             save.restart=FALSE,restart=FALSE,file_restart=NULL,
+                             export_results=F,
+                             #netw_type=c("all"),
+                             traffic_type=c("all")){
   ####################################################################
 
   for(i in 1:length(init_obj)) assign(names(init_obj)[i], init_obj[[i]])
@@ -147,12 +147,13 @@ WaterSpreadModel <- function(parameters,init_obj,
 
       ###### network part
 
-    ind <- which(water_netw$stateFromNode>0 & water_netw$stateToNode<1) # select links with non-empty start node and non-filled end node
-    water_netw[,newarrivals2:=newarrivals]
-    water_netw[ind,newarrivals2:=   1-prod(1-(stateFromNode * Pi_traffic )) ,by=ToNode] # calculate pintro for each link
+      ind <- which(water_netw$stateFromNode>0 & water_netw$stateToNode<1) # select links with non-empty start node and non-filled end node
+      water_netw[,newarrivals2:=newarrivals]
+      water_netw[ind,newarrivals2:=   1-prod(1-(stateFromNode * Pi_traffic )) ,by=ToNode] # calculate pintro for each link
 
       ## error check for declining newarrivals
-      if (any(water_netw[,newarrivals2<newarrivals])) {
+      if (any(water_netw[,newarrivals2<newarrivals]) &
+          any((water_netw[newarrivals2<newarrivals,newarrivals-newarrivals2])>10^-15)) {
         assign(x = "water_netw",value = water_netw,envir = .GlobalEnv)
         stop ("Problem in spread probability calculations: Decline in newarrivals")
       } else { water_netw[,newarrivals:=newarrivals2] }
@@ -160,10 +161,11 @@ WaterSpreadModel <- function(parameters,init_obj,
 
       water_netw[,stateToNode2:=stateToNode]
       water_netw[ind,stateToNode2:=1-(prod((1-stateToNode) * (1-newarrivals) )),by=ToNode] # update ToNodes with old and new state
-#      water_netw[,stateToNode2:=1-(prod((1-stateToNode2))),by=ToNode] # update ToNodes with old and new state
+      #      water_netw[,stateToNode2:=1-(prod((1-stateToNode2))),by=ToNode] # update ToNodes with old and new state
 
       ## error check for declining stateToNode
-      if (any(water_netw[,stateToNode2<stateToNode])) {
+      if (any(water_netw[,stateToNode2<stateToNode]) &
+          any((water_netw[stateToNode2<stateToNode,stateToNode-stateToNode2])>10^-15)) {
         assign(x = "water_netw",value = water_netw,envir = .GlobalEnv)
         stop ("Problem in spread probability calculations: Decline in stateToNode")
       } else { water_netw[,stateToNode:=stateToNode2] }
@@ -178,7 +180,7 @@ WaterSpreadModel <- function(parameters,init_obj,
       water_netw[is.na(newstate),newstate:=0]
       ## error check for declining stateFromNode
       if (any(water_netw[newstate>0,newstate<stateFromNode]) &
-          any((water_netw[newstate>0 & newstate<stateFromNode,stateFromNode]-water_netw[newstate>0 & newstate<stateFromNode,newstate])>10^-15) ) {
+          any((water_netw[newstate>0 & newstate<stateFromNode,stateFromNode-newstate])>10^-15) ) {
         assign(x = "water_netw",value = water_netw,envir = .GlobalEnv)
         stop ("Problem in spread probability calculations: Decline in stateFromNode")
       }

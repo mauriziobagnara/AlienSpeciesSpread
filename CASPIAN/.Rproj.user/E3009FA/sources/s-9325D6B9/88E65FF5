@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1545315084625.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "88E65FF5",
+    "lastKnownWriteTime" : 1545315296,
+    "last_content_update" : 1545315296804,
+    "path" : "~/GitHub/AlienSpeciesSpread/CASPIAN/R/Airflow_kernel.R",
+    "project_path" : "R/Airflow_kernel.R",
+    "properties" : {
+        "cursorPosition" : "14,0",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

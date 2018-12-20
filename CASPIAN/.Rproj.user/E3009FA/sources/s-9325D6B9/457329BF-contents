@@ -17,7 +17,7 @@ par_att3 <- 0.3311  # parameter g in Taylor et al. 2012, Model 2
 ## airflow kernel parameters
 par_air0_Roads<-0.1 ## pick-up probability on Roads
 par_air0_Railways<-0.5 ## pick-up probability on Railways
-par_air1<-2.307 # parameter b in Von Der Lippe et al. 2013, Lognormal. Values for A. altissima
+par_air1<- -0.3 # parameter b in Von Der Lippe et al. 2013, Lognormal. Values for A. altissima
 par_air2<-0.724 # parameter a in Von Der Lippe et al. 2013, Lognormal. Values for A. altissima
 
 ## natural dispersal kernel parameter

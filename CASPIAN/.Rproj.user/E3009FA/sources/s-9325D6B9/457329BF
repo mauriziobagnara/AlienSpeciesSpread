@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1545316782927.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2822322394",
+    "id" : "457329BF",
+    "lastKnownWriteTime" : 1545316814,
+    "last_content_update" : 1545316814799,
+    "path" : "C:/Users/mbagnara/Desktop/configFile.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "19,11",
+        "scrollLine" : "4",
+        "tempName" : "Untitled2"
+    },
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

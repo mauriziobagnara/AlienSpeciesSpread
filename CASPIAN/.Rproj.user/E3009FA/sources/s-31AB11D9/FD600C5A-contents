@@ -42,7 +42,7 @@ WaterSpreadModel <- function(parameters,init_obj,
                         dir_data=NULL, netw_data=NULL,Rdata_file=NULL,init_coords, num_iter,
                         incl_biofouling=T,incl_natural_water=T,
                         #species_preferences,
-                        max_dist,
+                        max_dist,Port_time=NA,Paint_time=NA,
                         iter_save=num_iter,
                         save.restart=FALSE,restart=FALSE,file_restart=NULL,
                         export_results=F,
@@ -101,7 +101,7 @@ WaterSpreadModel <- function(parameters,init_obj,
     #get PE for segment
     cat("\n Calculating Probability of Establishment for each segment \n")
 
-    water_netw[,Pe:=parameters[nparset,"est0"]*LCsuit] # parameter for scaling down probability of establishment # new
+    water_netw[,Pe:=parameters[nparset,"estW"]*LCsuit] # parameter for scaling down probability of establishment # new
     water_netw[is.na(Pe),Pe:=0]
     ## error check for Pe
     if (is.numeric(water_netw[,Pe])==FALSE |

@@ -196,8 +196,8 @@ SpreadModel <- function(parameters,init_obj,
 # new    if (restart==TRUE){road_netw[,Pe:=NULL]}
 
 # new    road_netw<- merge(road_netw,LCprop,by="ID", all=TRUE,sort=FALSE)
-     #road_netw[,Pe:=1-exp(-parameters[nparset,"est0"]*LCsuit)] # parameter for scaling down probability of establishment # new
-    road_netw[,Pe:=parameters[nparset,"est0"]*LCsuit] # parameter for scaling down probability of establishment # new
+     #road_netw[,Pe:=1-exp(-parameters[nparset,"estT"]*LCsuit)] # parameter for scaling down probability of establishment # new
+    road_netw[,Pe:=parameters[nparset,"estT"]*LCsuit] # parameter for scaling down probability of establishment # new
     road_netw[is.na(Pe),Pe:=0]
 
     #road_netw[,Pe:=LCproportion(List=LCList,LandCoverID=LandCoverID)] #for test only! Needs additional merge() to match segment ID

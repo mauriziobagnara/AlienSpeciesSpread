@@ -44,164 +44,127 @@ SpreadModel <- function(parameters,init_obj,
                         dir_data=NULL, netw_data=NULL,Rdata_file=NULL,init_coords, num_iter,
                         incl_attachment=T,incl_airflow=T,incl_natural=T,
                         incl_containers=T,Cont_treshold=0,
-                        incl_pallets=T,Pall_treshold=0,
+                        incl_pallets=T,Pall_threshold=0,
                         species_preferences,max_dist,
                         iter_save=num_iter,
                         save.restart=FALSE,restart=FALSE,file_restart=NULL,
                         export_results=F,netw_type=c("all"),traffic_type=c("all")){
+
+
   ####################################################################
 
   for(i in 1:length(init_obj)) assign(names(init_obj)[i], init_obj[[i]])
 
-  # roads_shp<-init_data$roads_shp
-  # init_segm<-init_data$init_segm
-  # if (incl_pallets==TRUE | incl_containers==TRUE){
-  #   Nodes_CargoCell<-init_data$Nodes_CargoCell
-  # }
-  # if (incl_containers==TRUE){
-  #   Container_netw<-init_data$Container_netw
-  # }
-  # if (incl_pallets==TRUE){
-  #   Pallets_netw<-init_data$Pallets_netw
-  #   init_Areas<-init_data$init_Areas
-  # }
-  road_netw<-roads_shp@data
+  road_netw<-init_obj[["roads_shp"]]@data
 
- # node_state<-init_data$node_state
+  for (nparset in 1:nrow(parameters)){ ## Loop over parameter settings
 
-  ## add opposite direction (only mean values in both directions are provided so far)
-  # road_netw_otherdir <- road_netw
-  # names(road_netw_otherdir) <- c("FromNode","ToNode","Length","Type","Traffic")
-  # road_netw_otherdir[,ToNode:=road_netw[,FromNode]]
-  # road_netw_otherdir[,FromNode:=road_netw[,ToNode]]
-  # road_netw <- rbind(road_netw,road_netw_otherdir)
-
-  ## transform measures into a single dispersal probability
-  # Events are considered non mutually exclusive.
-
-  #road_netw[,disp:=0]
-
-  # if (include_traffic) {road_netw[,p_traff:=f_traff(Traffic,traf1)]
-  # road_netw[,disp:=disp+p_traff]
-  # }
-
-  for (nparset in 1:nrow(parameters)){
-
-    #Call Containers here
+    ## Calculate Pintro for container flows #####################
     if (incl_containers==TRUE){
       cat("\n Calculating Probability of Introduction by container for each node \n")
       Container_netw[,Pi_container:=f_container(numContainers,parameters[nparset,"pall1"])]
-      set(Container_netw, j=which(colnames(Container_netw) %in% c("numContainers")), value=NULL )
-
-      #Associate container probabilities to nodes
-      setkey(Container_netw,FromNode)
-      setkey(road_netw,FromNode)
-      road_netw<-merge(road_netw,Container_netw,by="FromNode",all.x=T) # adding container state of FromNo
-      road_netw[,stateFromNode:=Pi_container]
-      set(road_netw, j=which(colnames(road_netw) %in% c("Pi_container")), value=NULL )
+      Container_netw[,numContainers:=NULL]
+      # set(Container_netw, j=which(colnames(Container_netw) %in% c("numContainers")), value=NULL )
 
       names(Container_netw)[1]<-c("ToNode")
       setkey(Container_netw,ToNode)
       setkey(road_netw,ToNode)
       road_netw<-merge(road_netw,Container_netw,by="ToNode",all.x=T) # adding container state of ToNode
-      road_netw[,stateToNode:=Pi_container]
+      road_netw$ToNode <- as.character(road_netw$ToNode)
+      # road_netw[,stateToNode:=Pi_container]
 
       #Filling NAs (some nodes are only from_nodes or to_nodes, or are not in the Cargo Areas)
-      road_netw[is.na(stateFromNode),stateFromNode:=0]
-      road_netw[is.na(stateToNode),stateToNode:=0]
       road_netw[is.na(Pi_container),Pi_container:=0]
-      setkey(road_netw,FromNode)
-    } else {
-        road_netw[,Pi_container:=0]
+
+      ## ERROR check for Pi_container
+      if (is.numeric(road_netw[,Pi_container])==FALSE |
+          any(road_netw[,Pi_container<0]) | any(road_netw[,Pi_container>1])) {
+        assign(x = "road_netw",value = road_netw,envir = .GlobalEnv)
+        stop ("Problem in probability calculations: Pi_container either non-numeric or not in 0:1 range")
       }
-    ## error check for Pi_container
-    if (is.numeric(road_netw[,Pi_container])==FALSE |
-        any(road_netw[,Pi_container<0]) | any(road_netw[,Pi_container>1])) {
-      assign(x = "road_netw",value = road_netw,envir = .GlobalEnv)
-      stop ("Problem in probability calculations: Pi_container either non-numeric or not in 0:1 range")
+    } else {
+      road_netw[,Pi_container:=0]
     }
 
-    #Assigning initial state=1 to initially invaded nodes.
-    # MUST BE DONE AFTER CALLING CONTAINER FUNCTION, this state must take precedence.
-    init_nodes <- road_netw[ID%in%init_segm,c(FromNode,ToNode)] # new
-    road_netw[FromNode%in%init_nodes,stateFromNode:=1]
-    road_netw[ToNode%in%init_nodes,stateToNode:=1]
+    ## Calculate Pintro for pallet flows #####################
+    if(incl_pallets==TRUE){
+      cat("\n Calculating Probability of Introduction for each Cargo area \n")
+      #Assigning probability to Cargo links for Pallets,
+      #using same kernel than containers with different parameterization:
+      Pallets_netw[,Pi_pallet:=f_container(numPallets,parameters[nparset,"pall1"])]
+      Pallets_netw[is.na(Pi_pallet),Pi_pallet:=0]
 
-    #get Traffic PI for network segment
+      ## ERROR check for pi_Pallet
+      if (is.numeric(Pallets_netw[,Pi_pallet])==FALSE |
+          any(Pallets_netw[,Pi_pallet<0]) | any(Pallets_netw[,Pi_pallet>1])) {
+        assign(x = "Pallets_netw",value = Pallets_netw,envir = .GlobalEnv)
+        stop ("Problem in probability calculations: Pi_pallet either non-numeric or not in 0:1 range")
+      }
+    }
+
+    ##################################################################
+    # calculate Pintro (probability of introduction) for each network link
+
     cat("\n Calculating Probability of Introduction for each segment \n")
 
+    ## natural dispersal ########
     if (incl_natural==TRUE){
       road_netw[,p_natural:=f_natural(Length,parameters[nparset,"nat1"],parameters[nparset,"nat2"] )]
-    } else{road_netw[,p_natural:= 0]}
 
+      ## ERROR check for p_natural
+      if (is.numeric(road_netw[,p_natural])==FALSE |
+          any(road_netw[,p_natural<0]) | any(road_netw[,p_natural>1])) {
+        assign(x = "road_netw",value = road_netw,envir = .GlobalEnv)
+        stop ("Problem in probability calculations: Pi_container either non-numeric or not in 0:1 range")
+      }
+    } else {road_netw[,p_natural:= 0]}
+
+    ## attachment to vehicle ########
     if (incl_attachment==TRUE) {
       road_netw[,p_attach:=f_attach(Length,parameters[nparset,"att1"],parameters[nparset,"att2"],parameters[nparset,"att3"])]
       road_netw[grep("S",road_netw$ID),p_attach:= 1-(1-p_attach)^(Traffic*parameters[nparset,"S_att0"])]
       road_netw[grep("R",road_netw$ID),p_attach:= 1-(1-p_attach)^(Traffic*parameters[nparset,"R_att0"])]
-    } else{road_netw[,p_attach:= 0]}
 
+      ## ERROR check for p_attach
+      if (is.numeric(road_netw[,p_attach])==FALSE |
+          any(road_netw[,p_attach<0]) | any(road_netw[,p_attach>1])) {
+        assign(x = "road_netw",value = road_netw,envir = .GlobalEnv)
+        stop ("Problem in probability calculations: p_attach either non-numeric or not in 0:1 range")
+      }
+    } else {road_netw[,p_attach:= 0]}
+
+    ## airstream by motorvehicles and trains ########
     if (incl_airflow==TRUE) {
       road_netw[,p_airflow:=f_airflow(Length,parameters[nparset,"air2"],parameters[nparset,"air1"])] # parameters a and b are inverted on purpose, to accomodate an error in von der Lippe et al. 2013. See code for f_airflow
       road_netw[grep("S",road_netw$ID),p_airflow:= 1-(1-p_airflow)^(Traffic*parameters[nparset,"S_air0"])] # new
       road_netw[grep("R",road_netw$ID),p_airflow:= 1-(1-p_airflow)^(Traffic*parameters[nparset,"R_air0"])]
-    }else{road_netw[,p_airflow:= 0]}
+
+      ## ERROR check for p_airflow
+      if (is.numeric(road_netw[,p_airflow])==FALSE |
+          any(road_netw[,p_airflow<0]) | any(road_netw[,p_airflow>1])) {
+        assign(x = "road_netw",value = road_netw,envir = .GlobalEnv)
+        stop ("Problem in probability calculations: p_airflow either non-numeric or not in 0:1 range")
+      }
+    } else {road_netw[,p_airflow:= 0]}
 
     road_netw[is.na(p_airflow),p_airflow:=0]
     road_netw[is.na(p_attach),p_attach:=0]
     road_netw[is.na(p_natural),p_natural:=0]
 
-    ## error check for p_natural
-    if (is.numeric(road_netw[,p_natural])==FALSE |
-        any(road_netw[,p_natural<0]) | any(road_netw[,p_natural>1])) {
-      assign(x = "road_netw",value = road_netw,envir = .GlobalEnv)
-      stop ("Problem in probability calculations: Pi_container either non-numeric or not in 0:1 range")
-    }
-    ## error check for p_attach
-    if (is.numeric(road_netw[,p_attach])==FALSE |
-        any(road_netw[,p_attach<0]) | any(road_netw[,p_attach>1])) {
-      assign(x = "road_netw",value = road_netw,envir = .GlobalEnv)
-      stop ("Problem in probability calculations: p_attach either non-numeric or not in 0:1 range")
-    }
-    ## error check for p_airflow
-    if (is.numeric(road_netw[,p_airflow])==FALSE |
-        any(road_netw[,p_airflow<0]) | any(road_netw[,p_airflow>1])) {
-      assign(x = "road_netw",value = road_netw,envir = .GlobalEnv)
-      stop ("Problem in probability calculations: p_airflow either non-numeric or not in 0:1 range")
-    }
-
+    ## Calculation of Pintro (Pi_traffi) depending on pathways selection above ########
     road_netw[, Pi_traffic:=1-Reduce("*", 1-.SD), .SDcols=grep("p_",colnames(road_netw))] # new solution
 
-    # col_prob<-road_netw[,.SD,.SDcols=grep("p_",colnames(road_netw))] # see above new solution
-    #
-    # road_netw[,Pi:=apply(col_prob,1,pUnion)] #prod by row
 
-    if(incl_pallets==TRUE){
-    cat("\n Calculating Probability of Introduction for each Cargo area \n")
-    #Assigning probability to Cargo links for Pallets,
-    #using same kernel than containers with different parameterization:
-    Pallets_netw[,Pi_pallet:=f_container(numPallets,parameters[nparset,"pall1"])]
-    Pallets_netw[is.na(Pi_pallet),Pi_pallet:=0]
-    ## error check for pi_Pallet
-    if (is.numeric(Pallets_netw[,Pi_pallet])==FALSE |
-        any(Pallets_netw[,Pi_pallet<0]) | any(Pallets_netw[,Pi_pallet>1])) {
-      assign(x = "Pallets_netw",value = Pallets_netw,envir = .GlobalEnv)
-      stop ("Problem in probability calculations: Pi_pallet either non-numeric or not in 0:1 range")
-      }
-    }
+    ##################################################################
+    # caculate probability of establishment for terrestrial habitats
 
-    #get PE for segment
     cat("\n Calculating Probability of Establishment for each segment \n")
-# new    # LCprop<-LCproportion(IDs=unique(road_netw$ID),List=LClist,LandCoverID=LandCoverID) #requires LClist, provided as internal data in data/LClist.rda
-#    road_netw[,list(road_netw,LCprop)]
-# new    if (restart==TRUE){road_netw[,Pe:=NULL]}
-
-# new    road_netw<- merge(road_netw,LCprop,by="ID", all=TRUE,sort=FALSE)
-     #road_netw[,Pe:=1-exp(-parameters[nparset,"estT"]*LCsuit)] # parameter for scaling down probability of establishment # new
     road_netw[,Pe:=parameters[nparset,"estT"]*LCsuit] # parameter for scaling down probability of establishment # new
     road_netw[is.na(Pe),Pe:=0]
 
     #road_netw[,Pe:=LCproportion(List=LCList,LandCoverID=LandCoverID)] #for test only! Needs additional merge() to match segment ID
-    ## error check for Pe
+
+    ## ERROR check for Pe
     if (is.numeric(road_netw[,Pe])==FALSE |
         any(road_netw[,Pe<0]) | any(road_netw[,Pe>1])) {
       assign(x = "road_netw",value = road_netw,envir = .GlobalEnv)
@@ -214,107 +177,117 @@ SpreadModel <- function(parameters,init_obj,
     set( road_netw, j=which(colnames(road_netw) %in% c("LCsuit","Length","Traffic","p_natural","p_attach","p_airflow","Order")), value=NULL ) # new
     setkey(road_netw,FromNode)
 
+    ##################################################################
+    ##### start simulation ###########################################
+    ##################################################################
 
-    ##### start simulation ############################################
-
-    ### select next nodes #############################
-
-    # ## first step ####
-    # nextnodes <- road_netw[FromNode%in%node_state[state>0,FromNode]] # identify next nodes
-    # nextnodes <- nextnodes[node_state, nomatch=0] # get states of all nodes
-    # newstate <- nextnodes$state * a0 * nextnodes$Length * nextnodes$Traffic # prob to reach nodes
-    # node_state[FromNode%in%nextnodes$ToNode,state:=newstate] # assigne new values
-
-
-    ## subsequent steps ######
     cat("\n Ongoing Simulation \n")
 
     #setup progress bar
     pb <- txtProgressBar(title = "Simulation state", label = "0% done",min=0, max=num_iter, initial=0,style = 3)
 
     modelList<- list()
-
     for (it in 1:num_iter){#num_iter
-
-      # if (it%in%names(init_segm)){ # note: t can never be in init_segm ???
-      #   init_nodes <- road_netw[ID%in%init_segm[[as.character(it)]],c(FromNode,ToNode)]
-      #   node_state[FromNode%in%init_nodes,state:=1]
-      #   road_netw[ID%in%init_segm[[as.character(it)]],Pinv:=1]
-      # }
 
       #commodities part (pallets only)
       if (incl_pallets==TRUE){
-      ind <- which(Pallets_netw$stateFromArea>0 & Pallets_netw$stateToArea<1) # select links with non-empty start node and non-filled end node
-      Pallets_netw[,newarrivals2:=newarrivals]
-      Pallets_netw[ind,newarrivals2:= 1-prod(1-(stateFromArea * Pi_pallet )) ,by=ToArea] # calculate pintro for each link
 
-      ## error check for declining newarrivals
-      if (any(Pallets_netw[,newarrivals2<newarrivals,]) &
-          any((Pallets_netw[newarrivals2<newarrivals,newarrivals-newarrivals2])>10^-15)) {
-        assign(x = "Pallets_netw",value = Pallets_netw,envir = .GlobalEnv)
-        stop ("Problem in commodities probability calculations: Decline in newarrivals")
-      } else { Pallets_netw[,newarrivals:=newarrivals2] }
-      Pallets_netw[,newarrivals2:=NULL]
+        ## Calculate link probabilities (Hanno) ######
+        # ind <- which(Pallets_netw$stateFromArea>0 & Pallets_netw$stateToArea<1) # select links with non-empty start node and non-filled end node # HANNO
+        Pallets_netw[,newarrivals2:=newarrivals]
+        # Pallets_netw[ind,newarrivals2:= 1-prod(1-(stateFromArea * Pi_pallet )) ,by=ToArea] # calculate pintro for each link
+        Pallets_netw[,newarrivals2:= 1-(stateFromArea * Pi_pallet ) ] # calculate pintro for each link # HANNO: Rearranged to separate 'by' from other operations
+        Pallets_netw[,newarrivals2:= 1-prod(newarrivals2) ,by=ToArea] # calculate pintro for each link # HANNO: Rearranged to separate 'by' from other operations
 
-      Pallets_netw[,stateToArea2:=stateToArea]
-      Pallets_netw[ind,stateToArea2:=1-(prod((1-stateToArea) * (1-newarrivals))),by=ToArea] # update ToAreas with old and new state
- #    Pallets_netw[,stateToArea2:=1-(prod((1-stateToArea2))),by=ToArea] # update ToAreas with old and new state
-     ## error check for declining stateToArea
-     if (any(Pallets_netw[,stateToArea2<stateToArea]) &
-         any((Pallets_netw[stateToArea2<stateToArea,stateToArea-stateToArea2])>10^-15)) {
-       assign(x = "Pallets_netw",value = Pallets_netw,envir = .GlobalEnv)
-       stop ("Problem in commodities probability calculations: Decline in stateToArea")
-     } else { Pallets_netw[,stateToArea:=stateToArea2]}
-     Pallets_netw[,stateToArea2:=NULL]
+        ## ERROR check for declining newarrivals
+        if (any(Pallets_netw[,newarrivals2<newarrivals]) &
+            any((Pallets_netw[newarrivals2<newarrivals,newarrivals-newarrivals2])>10^-15)) {
+          assign(x = "Pallets_netw",value = Pallets_netw,envir = .GlobalEnv)
+          stop ("Problem in commodities probability calculations: Decline in newarrivals")
+        } else { Pallets_netw[,newarrivals:=newarrivals2] }
+        Pallets_netw[,newarrivals2:=NULL]
 
+        ## update nodes #####################
+        ## update stateToAreas #####
+        newstate_pall <- unique(Pallets_netw[,c("ToArea","stateToArea","newarrivals")]) # select single node (remove duplicates)
+        newstate_pall[,stateToArea2:=1-((1-stateToArea) * (1-newarrivals))] # update ToAreas with old and new state
 
-     newstate <-Pallets_netw[,c("ToArea","stateToArea")] # extract new state of ToNodes to update FromNodes states
-     newstate<-as.data.table(aggregate(stateToArea ~ ToArea, newstate, pUnion))
-      setnames(newstate,c("FromArea","newstate"))# prepare file for merge (set names and key)
-      setkey(newstate,FromArea)
-      setkey(Pallets_netw,FromArea)
-      Pallets_netw <- merge(Pallets_netw,newstate,by="FromArea",all.x=T)
-      Pallets_netw[is.na(newstate),newstate:=0]
-      ## error check for declining stateFromArea
-      if (any(Pallets_netw[newstate>0,newstate<stateFromArea]) &
-          any((Pallets_netw[newstate>0 & newstate<stateFromArea,stateFromArea-newstate])>10^-15) ) {
-        assign(x = "Pallets_netw",value = Pallets_netw,envir = .GlobalEnv)
-        stop ("Problem in commodities probability calculations: Decline in stateFromArea")
-      }
+        ## ERROR check for duplicated ToNodes (multiple probabilities assigned to the same node)
+        if (any(duplicated(newstate_pall$ToArea))) {
+          assign(x = "newstate_pall",value = newstate_pall,envir = .GlobalEnv)
+          stop ("Problem in node probability calculations: ToNode(s) with multiple probabilities")
+        }
 
-      # Pallets_netw <- newstate[Pallets_netw] # merge Pallets_netw and newstate to update FromAreas states
-      Pallets_netw[newstate>0 ,stateFromArea:=newstate] # assigne new states to FromAreas
-      Pallets_netw[,newstate:=NULL] # remove column to avoid columns with the same names
+        ## ERROR check for declining stateToArea #
+        if (any(newstate_pall[,stateToArea2<stateToArea]) &
+            any((newstate_pall[stateToArea2<stateToArea,stateToArea-stateToArea2])>10^-15)) {
+          assign(x = "newstate_pall",value = newstate_pall,envir = .GlobalEnv)
+          stop ("Problem in commodities probability calculations: Decline in stateToArea")
+        } else { newstate_pall[,stateToArea:=stateToArea2]}
+        newstate_pall[,c("newarrivals","stateToArea2"):=NULL]
 
-      ###Assign pallet probability (state of node) to each nodes in each area, and update traffic network here:
-      PalletCols<-colnames(Pallets_netw)%in%c("ToArea","stateToArea")
-      PalletsToNetw<-Pallets_netw[, ..PalletCols] # new
-      # get ToNodes in ToAreas
-      setnames(PalletsToNetw,c("AreaPallet","stateToArea"))
-      PalletsToNetw<-as.data.table(aggregate(stateToArea ~ AreaPallet, PalletsToNetw, pUnion))
-      PalletsToNetw<-merge(Nodes_CargoCell,PalletsToNetw,by="AreaPallet",all.x=T)
-      PalletsToNetw[is.na(stateToArea),stateToArea:=0] # fill in NA's
-      # add column in road_netw wit stateToArea associated to proper ToNode
-      PalletCols<-colnames(PalletsToNetw)%in%c("NodeID","stateToArea")
-      PalletsToNetw<-PalletsToNetw[, ..PalletCols]
-      setnames(PalletsToNetw,c("ToNode","stateToArea"))
-      setkey(PalletsToNetw,ToNode)
-      setkey(road_netw,ToNode)
-      road_netw<-merge(road_netw,PalletsToNetw,by="ToNode",all.x=T)
-      setkey(road_netw,FromNode)
+        ## Merge new state nodes and network ####################
+        ## Update stateToArea
+        setnames(newstate_pall,c("ToArea","newstate"))# prepare file for merge (set names and key)
+        setkey(Pallets_netw,ToArea)
+        setkey(newstate_pall,ToArea)
+        Pallets_netw <- merge(Pallets_netw,newstate_pall,by="ToArea",all.x=T)
+        Pallets_netw[is.na(newstate),newstate:=0]
+        Pallets_netw[newstate>0 ,stateToArea:=newstate] # assigne new states to FromAreas
+        Pallets_netw[,newstate:=NULL] # remove column to avoid columns with the same names
+
+        ## Update stateFromArea
+        setnames(newstate_pall,c("FromArea","newstate"))# prepare file for merge (set names and key)
+        setkey(newstate_pall,FromArea)
+        setkey(Pallets_netw,FromArea)
+        Pallets_netw <- merge(Pallets_netw,newstate_pall,by="FromArea",all.x=T)
+        Pallets_netw[is.na(newstate),newstate:=0]
+
+        ## ERROR check for declining stateFromArea
+        if (any(Pallets_netw[newstate>0,newstate<stateFromArea]) &
+            any((Pallets_netw[newstate>0 & newstate<stateFromArea,stateFromArea-newstate])>10^-15) ) {
+          assign(x = "Pallets_netw",value = Pallets_netw,envir = .GlobalEnv)
+          stop ("Problem in commodities probability calculations: Decline in stateFromArea")
+        }
+
+        # Pallets_netw <- newstate[Pallets_netw] # merge Pallets_netw and newstate to update FromAreas states
+        Pallets_netw[newstate>0 ,stateFromArea:=newstate] # assigne new states to FromAreas
+        Pallets_netw[,newstate:=NULL] # remove column to avoid columns with the same names
+
+        ### Assign pallet probability (state of node) to each nodes in each area, and update traffic network here:
+        PalletsToNetw <- unique(Pallets_netw[,c("ToArea","stateToArea")])
+        # get ToNodes in ToAreas
+        setnames(PalletsToNetw,c("AreaPallet","stateToArea"))
+        # PalletsToNetw2<-as.data.table(aggregate(stateToArea ~ AreaPallet, PalletsToNetw, pUnion))
+        # PalletsToNetw[,stateToArea:=]
+        PalletsToNetw<-merge(Nodes_CargoCell,PalletsToNetw,by="AreaPallet",all.x=T)
+        PalletsToNetw[is.na(stateToArea),stateToArea:=0] # fill in NA's
+        # add column in road_netw wit stateToArea associated to proper ToNode
+        # PalletCols<-colnames(PalletsToNetw)%in%c("NodeID","stateToArea")
+        # PalletsToNetw<-PalletsToNetw[, ..PalletCols]
+        PalletsToNetw[,c("AreaPallet","AreaContainer"):=NULL]
+
+        ## update ToAreas #################################
+        setnames(PalletsToNetw,c("ToNode","stateToArea"))
+        setkey(PalletsToNetw,ToNode)
+        setkey(road_netw,ToNode)
+        road_netw<-merge(road_netw,PalletsToNetw,by="ToNode",all.x=T)
+
+        # setkey(road_netw,FromNode)
       } else {
         road_netw[,stateToArea:=0]
       }
 
-  #    assign(x = "road_netw",value = road_netw,envir = .GlobalEnv)
+      ###### spread on road and railway network #################################
 
-      ###### network part
+      road_netw[,newarrivals2:=newarrivals]
 
-    ind <- which(road_netw$stateFromNode>0 & road_netw$stateToNode<1) # select links with non-empty start node and non-filled end node
-    road_netw[,newarrivals2:=newarrivals]
-    road_netw[ind,newarrivals2:=   1-prod(1-(stateFromNode * Pi_traffic )) ,by=ToNode] # calculate pintro for each link
+      ## Calculate Pintro for all links
+      road_netw[,newarrivals2:=   1-(stateFromNode * Pi_traffic )] # calculate pintro for links # HANNO
+      ## Combine all Pintros to each ToNode
+      road_netw[,newarrivals2:=   1-prod(newarrivals2) ,by=ToNode]#}) # combining link pintros to newarrivals of ToNode
 
-      ## error check for declining newarrivals
+      ## ERROR check for declining newarrivals
       if (any(road_netw[,newarrivals2<newarrivals]) &
           any((road_netw[newarrivals2<newarrivals,newarrivals-newarrivals2])>10^-15)) {
         assign(x = "road_netw",value = road_netw,envir = .GlobalEnv)
@@ -322,26 +295,68 @@ SpreadModel <- function(parameters,init_obj,
       } else { road_netw[,newarrivals:=newarrivals2] }
       road_netw[,newarrivals2:=NULL]
 
-      road_netw[,stateToNode2:=stateToNode]
-      road_netw[ind,stateToNode2:=1-(prod((1-stateToNode) * (1-newarrivals) * (1-Pi_container) * (1-stateToArea))),by=ToNode] # update ToNodes with old and new state
-#      road_netw[,stateToNode2:=1-(prod((1-stateToNode2))),by=ToNode] # update ToNodes with old and new state
+      ## Select unique nodes
+      newstate_road <- unique(road_netw[,c("ToNode","stateToNode","newarrivals","Pi_container","stateToArea")]) # extract new state of ToNodes to update FromNodes states
+      ## Update state of nodes with old states, container and pallets
+      newstate_road[,stateToNode2:=1-((1-stateToNode) * (1-newarrivals) * (1-Pi_container) * (1-stateToArea))] # update ToNodes with old and new state
 
-      ## error check for declining stateToNode
-      if (any(road_netw[,stateToNode2<stateToNode]) &
-          any((road_netw[stateToNode2<stateToNode,stateToNode-stateToNode2])>10^-15)) {
+      ## ERROR check for declining stateToNode
+      if (any(newstate_road[,stateToNode2<stateToNode]) &
+          any((newstate_road[stateToNode2<stateToNode,stateToNode-stateToNode2])>10^-15)) {
         assign(x = "road_netw",value = road_netw,envir = .GlobalEnv)
         stop ("Problem in spread probability calculations: Decline in stateToNode")
-      } else { road_netw[,stateToNode:=stateToNode2] }
-      road_netw[,stateToNode2:=NULL]
+      } else { newstate_road[,stateToNode:=stateToNode2] }
+      newstate_road[,c("newarrivals","Pi_container","stateToArea","stateToNode2"):=NULL]
 
-      newstate <-road_netw[,c("ToNode","stateToNode")] # extract new state of ToNodes to update FromNodes states
-      newstate<-as.data.table(aggregate(stateToNode ~ ToNode, newstate, pUnion))
-      setnames(newstate,c("FromNode","newstate")) # prepare file for merge (set names and key)
-      setkey(newstate,FromNode)
-      setkey(road_netw,FromNode)
-      road_netw <- merge(road_netw,newstate,by="FromNode",all.x=T)
-      road_netw[is.na(newstate),newstate:=0]
-      ## error check for declining stateFromNode
+      ## ERROR check for duplicated ToNodes (multiple probabilities assigned to the same node)
+      if (any(duplicated(newstate_road$ToNode))) {
+        assign(x = "newstate_road",value = newstate_road,envir = .GlobalEnv)
+        stop ("Problem in node probability calculations: ToNode(s) with multiple probabilities")
+      }
+
+      ## Merge new node states with ToNodes of network file
+      setnames(newstate_road,c("ToNode","newstate")) # prepare file for merge (set names and key)
+      # setkey(newstate_road,ToNode)
+      # setkey(road_netw,ToNode)
+      # road_netw <- merge(road_netw,newstate_road,by="ToNode",all.x=T,sort=F)
+      # road_netw[is.na(newstate),newstate:=0]
+      # road_netw[newstate>0 ,stateToNode:=newstate] # assigne new states to FromNodes
+      ToNode_index <- match(road_netw$ToNode,newstate_road$ToNode)
+      road_netw[,stateToNode:=newstate_road[ToNode_index,newstate]]
+
+      # ## ERROR check for wrong column merging
+      # if (!identical(road_netw$newstate,road_netw$stateToNode)) {
+      #   # assign(x = "newstate_road",value = newstate_road,envir = .GlobalEnv)
+      #   stop ("ERROR: Road network not sorted as node file!")
+      # }
+      # road_netw[,newstate:=NULL] # remove column to avoid columns with the same names
+
+      ## ERROR check for wrong column merging
+      if (!identical(road_netw[,ToNode],newstate_road[ToNode_index,ToNode])) {
+        # assign(x = "newstate_road",value = newstate_road,envir = .GlobalEnv)
+        stop ("ERROR: Road network not sorted as ToNode file!")
+      }
+
+
+      ## Merge new node states with FromNodes of network file
+      setnames(newstate_road,c("FromNode","newstate")) # prepare file for merge (set names and key)
+      # setkey(newstate_road,FromNode)
+      # setkey(road_netw,FromNode)
+      # road_netw <- merge(road_netw,newstate_road,by="FromNode",all.x=T,sort=F)
+      # road_netw[is.na(newstate),newstate:=0]
+
+      FromNode_index <- match(road_netw$FromNode,newstate_road$FromNode)
+      # road_netw[,stateFromNode:=newstate_road[FromNode_index,newstate]]
+      noNA_index <- !is.na(FromNode_index)
+      road_netw[,newstate:=newstate_road[FromNode_index,newstate]]
+
+      ## ERROR check for wrong column merging
+      if (!identical(road_netw[noNA_index,FromNode],newstate_road[FromNode_index[noNA_index],FromNode])) {
+        # assign(x = "newstate_road",value = newstate_road,envir = .GlobalEnv)
+        stop ("ERROR: Road network not sorted as FromNode file!")
+      }
+
+      ## ERROR check for declining stateFromNode
       if (any(road_netw[newstate>0,newstate<stateFromNode]) &
           any((road_netw[newstate>0 & newstate<stateFromNode,stateFromNode-newstate])>10^-15) ) {
         assign(x = "road_netw",value = road_netw,envir = .GlobalEnv)
@@ -351,30 +366,12 @@ SpreadModel <- function(parameters,init_obj,
       # road_netw <- newstate[road_netw] # merge road_netw and newstate to update FromNodes states
       road_netw[newstate>0 ,stateFromNode:=newstate] # assigne new states to FromNodes
       road_netw[,newstate:=NULL] # remove column to avoid columns with the same names
+
       road_netw[,stateToNode_Area:=stateToArea]
       road_netw[,stateToArea:=NULL]
 
-
-      #  node_state_sub <- node_state[state>0,] # take a subset of occupied nodes, required to speed up 'merge' below
-      #
-      #  nextnodes <- road_netw[FromNode%in%node_state_sub$FromNode] # identify next nodes
-      #
-      # nextnodes <- merge(nextnodes,node_state_sub,by="FromNode") # merge old states and next nodes
-      #
-      # newstate <- nextnodes[,1-prod(1-(state * Pi)),by=ToNode] # combine all probs arriving at the same node from different nodes
-      #
-      # node_state[.(newstate$ToNode),newarrivals:=newstate$V1] # add new state to nodes file
-      # node_state[,state:=1-((1-state)*(1-newarrivals))]   # combine old and new state
-      #
-      # road_netw<-merge(road_netw,node_state[,1:2],by="FromNode")
-      #
-      # #combine all probabilities to Pinv
-      # iters<-as.numeric(names(init_segm))
-      # road_netw[!ID%in%as.character(unlist(init_segm[c(which(iters<it))])),Pinv:=Pe*(1-Pi)*state]
-      # road_netw[,state_node:=state]
-      # road_netw[,state:=NULL]
-
-      # store results
+      ############################################################
+      ## store results ###########################################
       if (it%in%iter_save) {
         road_netw[,p_link:=stateToNode] #calculate probability of link invasion: to be involved in Pinv instead of Pi, or it stays constant in time
         road_netw[,Pinv:=Pe*p_link] # calculate total probability for links
@@ -384,16 +381,14 @@ SpreadModel <- function(parameters,init_obj,
         road_netw_out <- road_netw_details[road_netw]
         setkey(road_netw_out,Order)
 
-         ## error check for state probabilities
+         ## ERROR check for state probabilities
         if (is.numeric(road_netw_out[,stateFromNode])==FALSE | is.numeric(road_netw_out[,stateToNode])==FALSE |
             any(road_netw_out[,stateFromNode<0]) | any(road_netw_out[,stateFromNode>1]) |
             any(road_netw_out[,stateToNode<0]) | any(road_netw_out[,stateToNode>1])) {
           assign(x = "road_netw_out",value = road_netw_out,envir = .GlobalEnv)
           stop ("Problem in probability calculations: Probabilities either non-numeric or not in 0:1 range")
         }
-
         modelList[[as.character(it)]]<-road_netw_out
-
       }
 
       #update progress bar
@@ -413,16 +408,15 @@ SpreadModel <- function(parameters,init_obj,
     } else if (incl_pallets==FALSE & incl_containers==TRUE){
       restart_data<-list(roads_shp,init_segm,Nodes_CargoCell,Container_netw)
       names(restart_data)<-c("roads_shp","init_segm","Nodes_CargoCell","Container_netw")
-    }else if (incl_pallets==TRUE & incl_containers==FALSE){
+    } else if (incl_pallets==TRUE & incl_containers==FALSE){
       restart_data<-list(roads_shp,init_segm,Nodes_CargoCell,Pallets_netw,init_Areas)
       names(restart_data)<-c("roads_shp","init_segm","Nodes_CargoCell","Pallets_netw","init_Areas")
-    }else if (incl_pallets==TRUE & incl_containers==TRUE){
+    } else if (incl_pallets==TRUE & incl_containers==TRUE){
       restart_data<-list(roads_shp,init_segm,Nodes_CargoCell,Container_netw,Pallets_netw,init_Areas)
       names(restart_data)<-c("roads_shp","init_segm","Nodes_CargoCell","Container_netw","Pallets_netw","init_Areas")
     }
-  save(restart_data, file = file.path(dir.name,"restart.Rdata"))
+    save(restart_data, file = file.path(dir.name,"restart.Rdata"))
   }
-
   return(modelList)
 }
 

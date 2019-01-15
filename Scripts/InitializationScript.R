@@ -12,15 +12,18 @@ graphics.off()
 # library(data.table)
 # library(openxlsx)
 
-mainDir<-"C:/Users/mbagnara/Desktop/BiK-F postDoc/Model"
-# mainDir<-"/home/hanno/Bioinvasion/EBAspread/Model"
+# mainDir<-"C:/Users/mbagnara/Desktop/BiK-F postDoc/Model"
+mainDir<-"/home/hanno/GitHub/AlienSpeciesSpread/CASPIAN"
 setwd(mainDir)
 
 
 configFile<-file.path(system.file("extdata", package="CASPIAN"),"configFile.R")
+configFile<- "/home/hanno/Bioinvasion/EBAspread/Model/configFile.R"
+
 #setwd("/home/hanno/Bioinvasion/EBAspread/Data/RoadData")
 
 modelResults<-runCASPIAN(configFile=configFile)
+
 ## starting from scratch:
 # modelResults<-SpreadModel(parameters,internal_dataset=TRUE,road_type=road_type,
 #                           initialize = T, save_init = T, file_init = "init_data.Rdata",

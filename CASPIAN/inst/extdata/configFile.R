@@ -1,5 +1,67 @@
-#### Model parameters #################################
+####################################################################
+#### Model settings and parameters #################################
+####################################################################
+
+####################################################################
+## General model settings ##########################################
+
+makeplot<-TRUE # should model results be plotted as maps at steps of iter_save_?
+save_plot<-TRUE # If TRUE, plots are created in the newly created folder as .png files. If FALSE, an x11() device is opened. Only considered if makeplot=TRUE.
+
+save.restart=FALSE #should results be saved in order to resume the simulation at a later stage?
+restart=FALSE #Should the simulation be resumed from previously saved results? Results are saved automatically in restart.rData
+file_restart=NULL #if restart=TRUE, the FULL path of the file to be read in (previously created by ModelSpread() or runCASPIAN() ).MUST BE an .Rdata file
+export_results=FALSE #Should results of the last iteration be exported in the newly created folder as a csv file?
+
+initialize<-TRUE  # Whether the model should be initialized.
+save_init<-FALSE # if initialize=TRUE, should the initialization file be saved?
+file_init<- "init_data.Rdata" # if initialize=TRUE, the name of the file to be created by InitializeSpread().
+#   in the newly created folder (default  "init_data.rData" if save_init=TRUE). If initialize=FALSE, the FULL path
+#   of the file to be read in (created by InitializeSpread() or ModelSpread() ). MUST BE an .Rdata file.
+
+
+######################################################################
+### Settings for terrestrial model ###################################
+
 runTerrestrialModel<-TRUE
+
+incl_attachment<-TRUE # if attachment to vehicles should be considered.
+incl_airflow<-TRUE # if vehicle airstream should be considered.
+incl_natural<-TRUE #if natural dispersal should be considered.
+incl_containers<-TRUE #if container flow should be considered.
+incl_pallets<-FALSE #if pallets flow should be considered.
+
+num_iter_T<- 100 # simulation steps. Terrestrial model only.
+iter_save_T <- c(1,num_iter_T) #round(seq(1,num_iter,length.out = 5),0). Terrestrial model only.
+
+netw_type <- c("Rail", "A") # types of network considered : "Rail" "A"    "B"    "L"    "S"    "K"    "F"    "G"    "X"    "R"    "k"
+traffic_type_T <- c("all") # types of traffic considered : "cargo" (trucks and cargo trains), "passengers" (cars and passenger trains),   "all"
+
+max_dist_T<-10^4 #maximum distance (m) from initial coordinates for a segment to be considered infected. Terrestrial model only.
+
+init_coords_T <-data.frame(Long=c(9.9938531,13.2862487),Lat=c(53.5396466,52.5588327),Iter=c(0,20))  # Hamburg Hafen & Berlin airport. Terrestrial Model
+
+
+######################################################################
+### Settings for aquatic model #######################################
+
+runAquaticModel<-FALSE
+
+incl_natural_water<-TRUE #if natural dispersal along rivers should be considered.
+incl_biofouling<-TRUE #if hull-fouling dispersal along rivers should be considered.
+
+num_iter_W<- 50 # simulation steps. Acquatic model only.
+iter_save_W <- c(1,20,num_iter_W) #round(seq(1,num_iter,length.out = 5),0). Acquatic model only.
+
+traffic_type_W <- c("all") # types of traffic considered : "Motorized", "Non-motorized",   "all"
+
+max_dist_W<-10^3 #maximum distance (m) from initial coordinates for a segment to be considered infected. Acquatic model only.
+
+init_coords_W <-data.frame(Long=c(9.9938531,13.2862487),Lat=c(53.5396466,52.5588327),Iter=c(0,20))  # Hamburg Hafen & Berlin airport. Acquatic Model
+
+
+####################################################################
+## Default parameter settings ######################################
 
 ## attachment kernel parameters
 par_att0_Roads <- 0.000001 ## pick-up probability on Roads
@@ -15,8 +77,8 @@ par_att3 <- 0.3311  # parameter g in Taylor et al. 2012, Model 2
 #f_traff <- function(T) 1-exp(-a*T)
 
 ## airflow kernel parameters
-par_air0_Roads<-0.1 ## pick-up probability on Roads
-par_air0_Railways<-0.5 ## pick-up probability on Railways
+par_air0_Roads<-0.001 ## pick-up probability on Roads
+par_air0_Railways<-0.005 ## pick-up probability on Railways
 par_air1<-2.307 # parameter b in Von Der Lippe et al. 2013, Lognormal. Values for A. altissima
 par_air2<-0.724 # parameter a in Von Der Lippe et al. 2013, Lognormal. Values for A. altissima
 
@@ -34,8 +96,8 @@ par_pall<-10^6 #increase for lower pallet probability
 
 #Treshold for container volume: all areas with number of containers arriving per year lower than Cont_treshold will not be considered
 Cont_treshold<-5
-#Treshold for pallets volume: all links with number of pallets exchanged per year lower than Pall_treshold will not be considered
-Pall_treshold<-300
+#Treshold for pallets volume: all links with number of pallets exchanged per year lower than Pall_threshold will not be considered
+Pall_threshold<-5
 
 #Set landcover IDs suitability for establishment
 
@@ -45,8 +107,10 @@ Pastures	<-	0.1 #LC_cat_ID=3
 Forests	<-	0   #LC_cat_ID=4
 Wetlands	<-	0   #LC_cat_ID=5
 
-# Waterways Parameters:
-runAquaticModel<-TRUE
+
+##################################################################
+# Waterways Parameters: ##########################################
+
 #natural dispersal: see  Radinger & Wolter 2013, eq. 1
 par_mobile_proportion<-0.5 #proportion of the population that actively moves
 par_stat_speed<-0 # speed for stationary component of population. In absence of stream velocity, species that do not swim do not spread naturally.
@@ -70,57 +134,8 @@ par_est_W<- .7 #arbitrary,<=1. Pioneer species should have high values (more lik
 
 #### Initialization info #################################
 Terrestrial_netw_data<-Road_Railway_Network
-Commodities_shape_data<-Cargo_shp
+Commodities_shape_data<-Cargo_shp # file has three names: Commodities_shape_data, CargoAreas and Cargo_shp
 Pallets_netw_data<-PalletsFlow
 Container_netw_data<-ContainerFlow
 Water_netw_data<-Ship_Travel_Netw
 
-# dir_data<-"C:/Users/mbagnara/Dropbox/AlienSpeciesSpread/Data/TestDataRoad/20180314_Verkehrsbelastungen2015_DTV"
-# netw_data<-"20180704_BelastungLkwPkw" #network layer
-# Rdata_file<- "road_shp.Rdata"
-
-max_dist_T<-10^4 #maximum distance (m) from initial coordinates for a segment to be considered infected. Terrestrial model only.
-
-
-init_coords_T <-data.frame(Long=c(9.9938531,13.2862487),Lat=c(53.5396466,52.5588327),Iter=c(0,20))  # Hamburg Hafen & Berlin airport. Terrestrial Model
-
-
-num_iter_T<- 10 # simulation steps. Terrestrial model only.
-iter_save_T <- c(1,10) #round(seq(1,num_iter,length.out = 5),0). Terrestrial model only.
-
-netw_type <- c("Rail", "A") # types of network considered : "Rail" "A"    "B"    "L"    "S"    "K"    "F"    "G"    "X"    "R"    "k"
-traffic_type_T <- c("all") # types of traffic considered : "cargo" (trucks and cargo trains), "passengers" (cars and passenger trains),   "all"
-traffic_type_W <- c("all") # types of traffic considered : "Motorized", "Non-motorized",   "all"
-
-
-max_dist_W<-10^3 #maximum distance (m) from initial coordinates for a segment to be considered infected. Acquatic model only.
-
-
-init_coords_W <-data.frame(Long=c(9.9938531,13.2862487),Lat=c(53.5396466,52.5588327),Iter=c(0,20))  # Hamburg Hafen & Berlin airport. Acquatic Model
-
-
-num_iter_W<- 50 # simulation steps. Acquatic model only.
-iter_save_W <- c(1,20,50) #round(seq(1,num_iter,length.out = 5),0). Acquatic model only.
-
-initialize<-TRUE  # Whether the model should be initialized.
-save_init<-FALSE # if initialize=TRUE, should the initialization file be saved?
-file_init<- "init_data.Rdata" # if initialize=TRUE, the name of the file to be created by InitializeSpread().
-#   in the newly created folder (default  "init_data.rData" if save_init=TRUE). If initialize=FALSE, the FULL path
-#   of the file to be read in (created by InitializeSpread() or ModelSpread() ). MUST BE an .Rdata file.
-
-incl_attachment<-TRUE # if attachment to vehicles should be considered.
-incl_airflow<-TRUE # if vehicle airstream should be considered.
-incl_natural<-TRUE #if natural dispersal should be considered.
-incl_containers<-TRUE #if container flow should be considered.
-incl_pallets<-TRUE #if pallets flow should be considered.
-
-incl_natural_water<-TRUE #if natural dispersal along rivers should be considered.
-incl_biofouling<-TRUE #if hull-fouling dispersal along rivers should be considered.
-
-makeplot<-TRUE #should model results be plotted as maps
-save_plot<-FALSE # If TRUE, plots are created in the newly created folder as .png files. If FALSE, an x11() device is opened. Only considered if makeplot=TRUE.
-
-save.restart=FALSE #should results be saved in order to resume the simulation at a later stage?
-restart=FALSE #Should the simulation be resumed from previously saved results? Results are saved automatically in restart.rData
-file_restart=NULL #if restart=TRUE, the FULL path of the file to be read in (previously created by ModelSpread() or runCASPIAN() ).MUST BE an .Rdata file
-export_results=FALSE #Should results of the last iteration be exported in the newly created folder as a csv file?

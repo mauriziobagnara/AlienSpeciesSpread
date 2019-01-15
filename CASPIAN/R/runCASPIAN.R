@@ -30,9 +30,9 @@ if(runTerrestrialModel==TRUE){
   #Model initialization
   if (restart==TRUE){ cat("\n Loading previous results \n")
     load(file_restart)
-    init_data<-restart_data
+    init_obj<-restart_data
   } else if (restart==FALSE & initialize==TRUE) {
-    init_data<-InitializeSpread(Terrestrial_netw_data=Terrestrial_netw_data,
+    init_obj<-InitializeSpread(Terrestrial_netw_data=Terrestrial_netw_data,
                                 Commodities_shape_data=Commodities_shape_data,
                                 Pallets_netw_data=Pallets_netw_data,
                                 Container_netw_data=Container_netw_data,
@@ -40,7 +40,7 @@ if(runTerrestrialModel==TRUE){
                                 netw_type=netw_type,save_init=save_init, save_dir=dir.name_T,file_init=file_init,
                                 species_preferences=species_preferences,traffic_type=traffic_type_T,
                                 incl_containers=incl_containers,incl_pallets=incl_pallets,
-                                Cont_treshold=Cont_treshold,Pall_treshold=Cont_treshold)
+                                Cont_treshold=Cont_treshold,Pall_threshold=Cont_treshold)
 
   } else if (restart==FALSE & initialize==FALSE) {cat("\n Loading initialization data \n")
     load(file_init)
@@ -48,7 +48,7 @@ if(runTerrestrialModel==TRUE){
 
 
   # Spread Calculations
-  TerrestrialModelResults<-SpreadModel(parameters=parameters,init_obj=init_data,
+  TerrestrialModelResults<-SpreadModel(parameters=parameters,init_obj=init_obj,
                             Terrestrial_netw_data=Terrestrial_netw_data,
                             Commodities_shape_data=Commodities_shape_data,
                             Pallets_netw_data=Pallets_netw_data,
@@ -57,12 +57,12 @@ if(runTerrestrialModel==TRUE){
                           init_coords=init_coords_T, num_iter=num_iter_T,max_dist = max_dist_T,
                           incl_attachment=incl_attachment,incl_airflow=incl_airflow, incl_natural=incl_natural,
                           incl_containers=incl_containers,incl_pallets=incl_pallets,
-                          Cont_treshold=Cont_treshold,Pall_treshold=Cont_treshold,
+                          Cont_treshold=Cont_treshold,Pall_threshold=Cont_treshold,
                           species_preferences=species_preferences,
                           iter_save = iter_save_T
                           )
 
-  cat("\n Model calculation completed \n")
+  cat("\n Terrestrial model calculation completed \n")
   print(proc.time() - tmp)
   cat("\n Output files being created in ", dir.name_T, "\n")
 
@@ -74,8 +74,9 @@ if(runTerrestrialModel==TRUE){
 
 }
 
-if(runAquaticModel==TRUE){
-   cat("\n Running Aquatic Model \n")
+if (runAquaticModel==TRUE){
+
+  cat("\n Running Aquatic Model \n")
   tmp <- proc.time()
 
   #running model:
@@ -109,7 +110,7 @@ if(runAquaticModel==TRUE){
                                          iter_save = iter_save_W
                         )
 
-  cat("\n Model calculation completed \n")
+  cat("\n Aquatic model calculation completed \n")
   print(proc.time() - tmp)
   cat("\n Output files being created in ", dir.name_W, "\n")
 
@@ -124,7 +125,7 @@ if(runAquaticModel==TRUE){
 if (makeplot) {
   if (runTerrestrialModel==TRUE){
     cat("\n Creating Terrestrial maps \n")
-  plotResults(list_results=TerrestrialModelResults,shapeObj=init_data$roads_shp,save_plot=save_plot,save_dir=dir.name_T)
+  plotResults(list_results=TerrestrialModelResults,shapeObj=init_obj$roads_shp,save_plot=save_plot,save_dir=dir.name_T)
     }
   if (runAquaticModel==TRUE){
     cat("\n Creating Aquatic maps \n")

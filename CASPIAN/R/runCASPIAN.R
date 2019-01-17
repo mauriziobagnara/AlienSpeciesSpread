@@ -54,12 +54,12 @@ if(runTerrestrialModel==TRUE){
                             Pallets_netw_data=Pallets_netw_data,
                             Container_netw_data=Container_netw_data,
                             netw_type=netw_type,traffic_type=traffic_type_T,
-                          init_coords=init_coords_T, num_iter=num_iter_T,max_dist = max_dist_T,
-                          incl_attachment=incl_attachment,incl_airflow=incl_airflow, incl_natural=incl_natural,
-                          incl_containers=incl_containers,incl_pallets=incl_pallets,
-                          Cont_treshold=Cont_treshold,Pall_threshold=Cont_treshold,
-                          species_preferences=species_preferences,
-                          iter_save = iter_save_T
+                            init_coords=init_coords_T, num_iter=num_iter_T,max_dist = max_dist_T,
+                            incl_attachment=incl_attachment,incl_airflow=incl_airflow, incl_natural=incl_natural,
+                            incl_containers=incl_containers,incl_pallets=incl_pallets,
+                            Cont_treshold=Cont_treshold,Pall_threshold=Cont_treshold,
+                            species_preferences=species_preferences,
+                            iter_save = iter_save_T,plot_funct_rel=plot_funct_rel
                           )
 
   cat("\n Terrestrial model calculation completed \n")
@@ -107,7 +107,7 @@ if (runAquaticModel==TRUE){
                                          init_coords=init_coords_W, num_iter=num_iter_W,max_dist = max_dist_W,
                                          incl_biofouling=incl_biofouling,incl_natural_water=incl_natural_water,
                                          Port_time=Port_time,Paint_time=Paint_time,
-                                         iter_save = iter_save_W
+                                         iter_save = iter_save_W,plot_funct_rel=plot_funct_rel
                         )
 
   cat("\n Aquatic model calculation completed \n")

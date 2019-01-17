@@ -22,6 +22,7 @@ InitializeSpread<-function(Terrestrial_netw_data,Commodities_shape_data,
   road_netw <- as.data.table(roads_shp@data)
   road_netw[,Order:=c(1:nrow(roads_shp@data))]
 
+  ## subsetting road/railway network according to traffic_type
   suppressWarnings(
     if (all(traffic_type!=c("all"))) {
       colTraffic<-which(colnames(road_netw)%in%traffic_type)
@@ -40,6 +41,7 @@ InitializeSpread<-function(Terrestrial_netw_data,Commodities_shape_data,
     options(warn=0)
   }
 
+  ## set initial values for spread
   road_netw[,newarrivals:=0]
   road_netw[,newarrivals:=as.numeric(newarrivals)]
   road_netw[,stateFromNode:=0]
@@ -68,12 +70,17 @@ InitializeSpread<-function(Terrestrial_netw_data,Commodities_shape_data,
     CargoAreas<-Commodities_shape_data
     CargoAreas@data$AreaContainer <- as.character(CargoAreas@data$AreaContainer)
     CargoAreas@data$AreaPallet <- as.character(CargoAreas@data$AreaPallet)
+
     NodesCoords<-getNodesCoord(roads_shp)
     coordinates(NodesCoords)<- ~ Long+Lat
     proj4string(NodesCoords)<-proj4string(CargoAreas)
+
     Nodes_CargoCell<-over(NodesCoords,CargoAreas)
     Nodes_CargoCell<-as.data.table(cbind(Nodes_CargoCell,NodesCoords@data$nodeID,stringsAsFactors=F))
     setnames(Nodes_CargoCell,c(names(Nodes_CargoCell)[1:2],"NodeID"))
+
+    ## subsetting nodes according to subset of road_netw
+    Nodes_CargoCell <- Nodes_CargoCell[NodeID%in%road_netw$ToNode]
   }
 
   ####################################################################

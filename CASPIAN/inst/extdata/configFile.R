@@ -5,8 +5,8 @@
 ####################################################################
 ## General model settings ##########################################
 
-makeplot<-TRUE # should model results be plotted as maps at steps of iter_save_?
-save_plot<-TRUE # If TRUE, plots are created in the newly created folder as .png files. If FALSE, an x11() device is opened. Only considered if makeplot=TRUE.
+makeplot<-FALSE # should model results be plotted as maps at steps of iter_save_?
+save_plot<-FALSE # If TRUE, plots are created in the newly created folder as .png files. If FALSE, an x11() device is opened. Only considered if makeplot=TRUE.
 
 save.restart=FALSE #should results be saved in order to resume the simulation at a later stage?
 restart=FALSE #Should the simulation be resumed from previously saved results? Results are saved automatically in restart.rData
@@ -19,7 +19,6 @@ file_init<- "init_data.Rdata" # if initialize=TRUE, the name of the file to be c
 #   in the newly created folder (default  "init_data.rData" if save_init=TRUE). If initialize=FALSE, the FULL path
 #   of the file to be read in (created by InitializeSpread() or ModelSpread() ). MUST BE an .Rdata file.
 
-
 ######################################################################
 ### Settings for terrestrial model ###################################
 
@@ -29,7 +28,7 @@ incl_attachment<-TRUE # if attachment to vehicles should be considered.
 incl_airflow<-TRUE # if vehicle airstream should be considered.
 incl_natural<-TRUE #if natural dispersal should be considered.
 incl_containers<-TRUE #if container flow should be considered.
-incl_pallets<-FALSE #if pallets flow should be considered.
+incl_pallets<-TRUE #if pallets flow should be considered.
 
 num_iter_T<- 100 # simulation steps. Terrestrial model only.
 iter_save_T <- c(1,num_iter_T) #round(seq(1,num_iter,length.out = 5),0). Terrestrial model only.
@@ -48,7 +47,7 @@ init_coords_T <-data.frame(Long=c(9.9938531,13.2862487),Lat=c(53.5396466,52.5588
 runAquaticModel<-FALSE
 
 incl_natural_water<-TRUE #if natural dispersal along rivers should be considered.
-incl_biofouling<-TRUE #if hull-fouling dispersal along rivers should be considered.
+incl_ship<-TRUE #if hull-fouling dispersal along rivers should be considered.
 
 num_iter_W<- 50 # simulation steps. Acquatic model only.
 iter_save_W <- c(1,20,num_iter_W) #round(seq(1,num_iter,length.out = 5),0). Acquatic model only.
@@ -62,6 +61,8 @@ init_coords_W <-data.frame(Long=c(9.9938531,13.2862487),Lat=c(53.5396466,52.5588
 
 ####################################################################
 ## Default parameter settings ######################################
+
+plot_funct_rel <- TRUE # plot functional relationships of probabilities
 
 ## attachment kernel parameters
 par_att0_Roads <- 0.000001 ## pick-up probability on Roads
@@ -90,9 +91,9 @@ par_nat2<- 0.5 #González-Martínez et al . 2006, P. pinaster.   >1: thin-tailed
 par_est_T<- .7 #arbitrary,<=1. Pioneer species should have high values (more likely to establish if the habitat is suitable), late succession species lower values.
 
 ## parameter for introduction by container
-par_cont<-10^5 #increase for lower container probability
+par_cont<-10^3 #increase for lower container probability
 ## parameter for introduction by pallet
-par_pall<-10^6 #increase for lower pallet probability
+par_pall<-10^3 #increase for lower pallet probability
 
 #Treshold for container volume: all areas with number of containers arriving per year lower than Cont_treshold will not be considered
 Cont_treshold<-5

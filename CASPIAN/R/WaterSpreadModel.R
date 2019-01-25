@@ -69,7 +69,7 @@ WaterSpreadModel <- function(parameters,init_obj,
 
     ## Calculate dispersal by ships #####################
     if (incl_ship==TRUE) {
-      water_netw[,p_ship:=f_ship(a = parameters[nparset,"alpha"],c1 = parameters[nparset,"c1"],
+      water_netw[,p_ship:=f_hullfouling(a = parameters[nparset,"alpha"],c1 = parameters[nparset,"c1"],
                                              g = parameters[nparset,"gamma"],c2 = parameters[nparset,"c2"],
                                              b = parameters[nparset,"beta"],c3 = parameters[nparset,"c3"],
                                              Dp = Port_time,Qp = Paint_time,VTp = Length)]

@@ -23,14 +23,15 @@ f_biofouling<-function(K1=1,K2=0,x=1,
                         g, c2,
                         b,c3,
                         Dp,Qp,VTp){
-ifelse (is.na(Qp),
-yes= Qp_term<-1,
-no= Qp_term<-1-exp(-g*(Qp^c2))
-)
-ifelse (is.na(Dp),
-        yes= Dp_term<-1,
-        no= Dp_term<-1-exp(-a*(Dp^c1))
-)
-Nind<- (K1+K2*x) * Dp_term * Qp_term * exp(-b*(VTp^c3))
-return(Nind)
+  ifelse (is.na(Qp),
+          yes= Qp_term<-1,
+          no= Qp_term<-1-exp(-g*(Qp^c2))
+  )
+  ifelse (is.na(Dp),
+          yes= Dp_term<-1,
+          no= Dp_term<-1-exp(-a*(Dp^c1))
+  )
+  Nind<- (K1+K2*x) * Dp_term * Qp_term * exp(-b*(VTp^c3))
+
+  return(Nind)
 }

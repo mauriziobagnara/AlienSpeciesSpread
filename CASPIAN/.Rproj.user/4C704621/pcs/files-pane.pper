@@ -1,6 +1,10 @@
 {
-    "path" : "~/GitHub/AlienSpeciesSpread/CASPIAN/inst/extdata",
+    "path" : "~/GitHub/AlienSpeciesSpread/CASPIAN/R",
     "sortOrder" : [
+        {
+            "ascending" : false,
+            "columnIndex" : 4
+        },
         {
             "ascending" : true,
             "columnIndex" : 2

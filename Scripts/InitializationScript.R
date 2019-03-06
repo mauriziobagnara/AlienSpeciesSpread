@@ -18,8 +18,8 @@ setwd(mainDir)
 
 
 # configFile<-file.path(system.file("extdata", package="CASPIAN"),"configFile.R")
-# configFile<- "/home/hanno/GitHub/AlienSpeciesSpread/CASPIAN/inst/extdata/configFile.R"
-configFile<- "/home/hanno/Bioinvasion/EBAspread/Model/CASPIAN/inst/extdata/configFile.R"
+configFile<- "/home/hanno/GitHub/AlienSpeciesSpread/CASPIAN/inst/extdata/configFile.R"
+# configFile<- "/home/hanno/Bioinvasion/EBAspread/Model/CASPIAN/inst/extdata/configFile.R"
 
 #setwd("/home/hanno/Bioinvasion/EBAspread/Data/RoadData")
 

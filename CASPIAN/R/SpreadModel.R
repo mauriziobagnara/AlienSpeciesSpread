@@ -62,6 +62,12 @@ SpreadModel <- function(parameters,init_obj,
 
   for (nparset in 1:nrow(parameters)){ ## Loop over parameter settings
 
+    ## plot functional relationship of probability
+    if (plot_funct_rel==TRUE){
+      x11(width=8,height=5)
+      op <- par(mar=c(5,5,2.5,2.5),mfrow=c(2,3))
+    }
+
     ## Calculate Pintro for container flows #####################
     if (incl_containers==TRUE){
       cat("\n Calculating Probability of introduction by container for each node \n")
@@ -70,8 +76,6 @@ SpreadModel <- function(parameters,init_obj,
       ## plot functional relationship of probability
       if (plot_funct_rel==TRUE){
         prob_varx <- seq(min(Container_netw$numContainers),max(Container_netw$numContainers),length.out=1000)
-        x11(width=8,height=5)
-        op <- par(mar=c(5,5,2.5,2.5),mfrow=c(2,3))
         plot(prob_varx,f_container(prob_varx,parameters[nparset,"pall1"]),main="Container dispersal",xlab="Number of containers",ylab="Probability")
       }
       Container_netw[,numContainers:=NULL]
@@ -186,6 +190,10 @@ SpreadModel <- function(parameters,init_obj,
         stop ("Problem in probability calculations: p_airflow either non-numeric or not in 0:1 range")
       }
     } else {road_netw[,p_airflow:= 0]}
+
+    if (plot_funct_rel==TRUE){
+      par(op)
+    }
 
     road_netw[is.na(p_airflow),p_airflow:=0]
     road_netw[is.na(p_attach),p_attach:=0]

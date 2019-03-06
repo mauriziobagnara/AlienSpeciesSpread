@@ -22,7 +22,7 @@ file_init<- "init_data.Rdata" # if initialize=TRUE, the name of the file to be c
 ######################################################################
 ### Settings for terrestrial model ###################################
 
-runTerrestrialModel<-TRUE
+runTerrestrialModel<-FALSE
 
 incl_attachment<-TRUE # if attachment to vehicles should be considered.
 incl_airflow<-TRUE # if vehicle airstream should be considered.
@@ -44,10 +44,10 @@ init_coords_T <-data.frame(Long=c(9.9938531,13.2862487),Lat=c(53.5396466,52.5588
 ######################################################################
 ### Settings for aquatic model #######################################
 
-runAquaticModel<-FALSE
+runAquaticModel<-TRUE
 
 incl_natural_water<-TRUE #if natural dispersal along rivers should be considered.
-incl_ship<-TRUE #if hull-fouling dispersal along rivers should be considered.
+incl_hullfouling <-TRUE #if hull-fouling dispersal along rivers should be considered.
 
 num_iter_W<- 50 # simulation steps. Acquatic model only.
 iter_save_W <- c(1,20,num_iter_W) #round(seq(1,num_iter,length.out = 5),0). Acquatic model only.
@@ -62,7 +62,7 @@ init_coords_W <-data.frame(Long=c(9.9938531,13.2862487),Lat=c(53.5396466,52.5588
 ####################################################################
 ## Default parameter settings ######################################
 
-plot_funct_rel <- TRUE # plot functional relationships of probabilities
+plot_funct_rel <- FALSE # plot functional relationships of probabilities
 
 ## attachment kernel parameters
 par_att0_Roads <- 0.000001 ## pick-up probability on Roads

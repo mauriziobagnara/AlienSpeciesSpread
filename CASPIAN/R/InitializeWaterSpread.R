@@ -16,14 +16,7 @@ InitializeWaterSpread<-function(Water_netw_data,
   colnames(water_shp@data) <- c("FromNode","ToNode","Motorized", "Non_motorized","Length","ID")
 
   water_netw <- as.data.table(water_shp@data)
-  water_netw[,Order:=c(1:nrow(water_shp@data))]
-
-  ## add cargo turnover of ports to identify ports and their sizes
-  port_data <- fread("../Data/Waterways/PortNodeData.csv",sep=";",stringsAsFactors = F)
-  port_data$nodeID <- as.character(port_data$nodeID)
-  setkey(water_netw,ToNode)
-  setkey(port_data,nodeID)
-  water_netw <- merge(water_netw,port_data[,c("nodeID","Cargo_in_kt")],by.x="ToNode",by.y="nodeID",all.x=T)
+  water_netw[,Order:=c(1:nrow(water_netw))]
 
   suppressWarnings(
   if (all(traffic_type!=c("all"))) {

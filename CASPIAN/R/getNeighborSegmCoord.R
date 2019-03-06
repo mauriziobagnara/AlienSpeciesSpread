@@ -32,7 +32,7 @@ getNeighbourSegmCoord <- function(shapeObj,init_coords,max_dist){
     D$dist<-geosphere::distm(D[,1:2], init_coords[i,1:2],fun=distVincentyEllipsoid)
 
     neigh_segm <- D$ID[D$dist<max_dist] # segments with parts below max_dist, new
-    if (length(neigh_segm) == 0) warning("No segments found within the specified maximum distance.")
+    if (length(neigh_segm) == 0) warning(paste("No segments found within the specified maximum distance for ",i,"th coordinate.",sep=""))
 
     idsList <- unique(c(idsList,neigh_segm)) # new
     # idsList[[as.character(init_coords[i,3])]]<-c(idsList[[as.character(init_coords[i,3])]],as.character(unique(D$ID[D$dist<max_dist])))

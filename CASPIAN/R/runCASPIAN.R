@@ -105,7 +105,7 @@ if (runAquaticModel==TRUE){
                                            Water_netw_data=Water_netw_data,
                                          traffic_type=traffic_type_W,
                                          init_coords=init_coords_W, num_iter=num_iter_W,max_dist = max_dist_W,
-                                         incl_biofouling=incl_biofouling,incl_natural_water=incl_natural_water,
+                                         incl_hullfouling=incl_hullfouling,incl_natural_water=incl_natural_water,
                                          Port_time=Port_time,Paint_time=Paint_time,
                                          iter_save = iter_save_W,plot_funct_rel=plot_funct_rel
                         )

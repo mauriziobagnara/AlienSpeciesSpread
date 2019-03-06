@@ -18,7 +18,7 @@
 # Turn into probabilities: K1=1,K2=0,x irrelevant
 # a =5.85 * 10^-20, c1 =20.9, g =1.03 * 10^-10, c2 =3.63, b =3.15 * 10^-7, and c3 =2.39
 
-f_biofouling<-function(K1=1,K2=0,x=1,
+f_hullfouling<-function(K1=1,K2=0,x=1,
                         a ,c1,
                         g, c2,
                         b,c3,

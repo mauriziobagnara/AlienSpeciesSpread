@@ -10,7 +10,7 @@ graphics.off()
 # library(rgdal) # only used for plotting
 # library(sf)
 # library(data.table)
-# library(openxlsx)
+library(CASPIAN)
 
 # mainDir<-"C:/Users/mbagnara/Desktop/BiK-F postDoc/Model"
 mainDir<-"/home/hanno/Bioinvasion/EBAspread/Model"
@@ -18,7 +18,8 @@ setwd(mainDir)
 
 
 # configFile<-file.path(system.file("extdata", package="CASPIAN"),"configFile.R")
-configFile<- "/home/hanno/GitHub/AlienSpeciesSpread/CASPIAN/inst/extdata/configFile.R"
+# configFile<- "/home/hanno/GitHub/AlienSpeciesSpread/CASPIAN/inst/extdata/configFile.R"
+configFile<- "/home/hanno/Bioinvasion/EBAspread/Model/CASPIAN/inst/extdata/configFile.R"
 
 #setwd("/home/hanno/Bioinvasion/EBAspread/Data/RoadData")
 

@@ -1,3 +1,0 @@
-rm(list=ls())
-output<-runCASPIAN("~/../Desktop/configFile.R")
-

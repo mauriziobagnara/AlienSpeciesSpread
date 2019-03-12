@@ -1,6 +1,5 @@
-plotResults<-function(list_results,shapeObj,save_plot,save_dir,data_coords=NULL){
+plotResults<-function(list_results,shapeObj,save_plot,save_dir){
   #  border_shp <- readOGR(dsn=file.path(dir_data,"gadm36_DEU_shp"),layer="gadm36_DEU_1",stringsAsFactors = F)
-
   num_col<-5
   #create palette
   norm<-as.character(seq(0,1,length.out=c(10^num_col+1)))
@@ -41,52 +40,51 @@ plotResults<-function(list_results,shapeObj,save_plot,save_dir,data_coords=NULL)
     #   assign(x = "node_shp_sub",value = node_shp_sub, envir = .GlobalEnv)
 
     if (save_plot==T) {png(filename = file.path(save_dir,(paste0("SpreadModel_map",sprintf("%04d", as.numeric(names(list_results)[i])),".png"))),width=10,height = 8,units = "in",res=c(3*72))
-    } else { x11(width=11,height = 8)
+    } else {
+      x11(width=10,height = 10)
     }
 
-    layout(matrix(1:3,nrow=1),widths=c(0.6,0.15,0.25))
+   layout(matrix(1:2,nrow=1),widths=c(0.2,0.8))
+
+   # legend part
+        op <- par(mar=c(0.1,0.1,0.1,0.5))
+   num_legend<-40
+   color_legend <- rev(c(#"black",
+     "darkgray", colfunc(num_legend)))
+   xl <- 1
+   yb <- 1
+   xr <- 1.5
+   yt <- 2
+   plot(NA,type="n",ann=FALSE,xlim=c(0,1.7),ylim=c(1,2),xaxt="n",yaxt="n",bty="n")
+   rect(
+     xl,
+     head(seq(yb,yt,(yt-yb)/(num_legend+1)),-1),
+     xr,
+     tail(seq(yb,yt,(yt-yb)/(num_legend+1)),-1),
+     col= color_legend,
+     border = color_legend
+   )
+   text(x=c(xl-0.1), y = seq(yt,yb,length.out = c(num_legend+1))[c(1,seq(2,c(num_legend+1),length.out = 11))],adj = 1,
+        labels = c("Not invaded",paste(" Pinv =",seq(0,1,by=0.1),sep=" ")),cex=.9)
+   # mtext(
+   #   paste("Pinv =",seq(1,0,by=-0.1),sep=" "),
+   #   side=2,at= c(seq(yb,yt,(yt-yb)/(num_legend+1))[seq(1,(num_legend+1),by=c(num_legend/10))]),
+   #   las=2,cex=0.7)
+   # frame()
 
     #actual map plotting
-    op <- par(mar=c(0.1,1,0.1,0.5))
-    plot(border_dataset,axes=F, border="black",
+    op <- par(mar=c(0.1,0.2,0.1,0.2))
+    plot(Not_inv,xlim=c(xmin(shapeObj),xmax(shapeObj)),ylim=c(ymin(shapeObj),ymax(shapeObj)),
+         axes=F,col="darkgray",
          panel.first=rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4]))
-    plot(Not_inv,add=T,col="darkgray")
+  #  plot(Not_inv,add=T,col="darkgray")
     plot(Inv,add=T,col=Inv@data$color)
     # for (j in init_nodes) points(subset(node_shp_sub,Knoten_Num%in%j),pch=1,cex=1,col="darkgrey",lwd=2)
     # mtext(t,side=3,line=-2)
     legend("topleft",c(paste0("Iter. #",names(list_results)[i])),box.col = "white",bg = "white")
-    plot(border_dataset,axes=F,add=T, border="black")
-   if (!is.null(data_coords)) points(data_coords,cex=2,lwd=3,col="blue")
+#    plot(border_dataset,axes=F,add=T, border="black")
 
-    # legend part
-     op <- par(mar=c(0.1,4.5,0.1,0.5))
-    num_legend<-40
-    color_legend <- rev(c("black","darkgray", colfunc(num_legend)))
-    xl <- 1
-    yb <- 1
-    xr <- 1.5
-    yt <- 2
-    plot(NA,type="n",ann=FALSE,xlim=c(1,1.7),ylim=c(1,2),xaxt="n",yaxt="n",bty="n")
-    rect(
-      xl,
-      head(seq(yb,yt,(yt-yb)/(num_legend+2)),-1),
-      xr,
-      tail(seq(yb,yt,(yt-yb)/(num_legend+2)),-1),
-      col= color_legend,
-      border = color_legend
-    )
-    mtext(
-      c("Administrative border",
-        "Species has not invaded",
-        "Species has invaded with probability = Pinv"),
-      side=4,
-      at= c(rev(seq(yb,yt,(yt-yb)/(num_legend+2)))-c(1/(3*num_legend)))[c(1:3)],
-      las=2,cex=0.7)
-    mtext(
-      paste("Pinv =",seq(1,0,by=-0.1),sep=" "),
-      side=2,at= c(seq(yb,yt,(yt-yb)/(num_legend+2))[seq(1,(num_legend+1),by=c(num_legend/10))]),
-      las=2,cex=0.7)
-    frame()
+
 
     if (save_plot==T) dev.off()
     cat("\n Map",i,"completed \n")

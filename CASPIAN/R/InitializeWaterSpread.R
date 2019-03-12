@@ -13,7 +13,7 @@ InitializeWaterSpread<-function(Water_netw_data,
   cat("\n Loading network \n")
   water_shp<-Water_netw_data
 
-  colnames(water_shp@data) <- c("FromNode","ToNode","Motorized", "Non_motorized","Length","ID")
+  colnames(water_shp@data) <- c("FromNode","ToNode","Motorized", "Non_motorized","Length","ID","Order","CargoToNode",   "velocity","River","Flow", "RiverSegm", "Suitab")
 
   water_netw <- as.data.table(water_shp@data)
   water_netw[,Order:=c(1:nrow(water_netw))]
@@ -83,7 +83,7 @@ InitializeWaterSpread<-function(Water_netw_data,
   # setkey(water_netw,ID)
   # road_netw <- road_segm_suit[road_netw]
 
-  water_netw[,LCsuit:=1] #assumes maximum suitability in all links. Possible factors to consider for suitability: temperature, salinity, pollution
+  #water_netw[,LCsuit:=1] #assumes maximum suitability in all links. Possible factors to consider for suitability: temperature, salinity, pollution
 
   ###########################################################
 

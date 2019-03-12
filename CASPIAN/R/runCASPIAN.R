@@ -4,15 +4,13 @@ runCASPIAN<-function(configFile){
 
   source(configFile,local=TRUE)
 
-  # build parameter matrix
-  parameters<-matrix(c(par_att0_Roads,par_att0_Railways,par_att1,par_att2,par_att3,
+   # build parameter matrix
+  parameters<-ParMatrix(par_att0_Roads,par_att0_Railways,par_att1,par_att2,par_att3,
                        par_air0_Roads,par_air0_Railways,par_air1,par_air2,
                        par_nat1,par_nat2,par_est_T,par_cont,par_pall,
-                       par_mobile_proportion,par_stat_speed,par_mob_speed,
+                       par_nat_a,par_nat_b,par_ball,
                        par_a,par_c1,par_g,par_c2,par_b,par_c3,par_est_W
-                       ),nrow=1,byrow=T)
-  colnames(parameters)<-c("S_att0", "R_att0","att1","att2","att3","S_air0","R_air0", "air1","air2","nat1","nat2","estT","cont1","pall1",
-                          "mob_prop","stat_speed","mob_speed","alpha","c1","gamma","c2","beta","c3","estW")
+                       )
 
   #build land cover species preference matrix
   species_preferences<- data.table(LC_cat_ID= 1:5,Species_preferences=c(Urban_areas,Arable_land,Pastures,Forests,Wetlands))
@@ -40,7 +38,7 @@ if(runTerrestrialModel==TRUE){
                                 netw_type=netw_type,save_init=save_init, save_dir=dir.name_T,file_init=file_init,
                                 species_preferences=species_preferences,traffic_type=traffic_type_T,
                                 incl_containers=incl_containers,incl_pallets=incl_pallets,
-                                Cont_treshold=Cont_treshold,Pall_threshold=Cont_treshold)
+                                Cont_treshold=Cont_treshold,Pall_threshold=Pall_treshold)
 
   } else if (restart==FALSE & initialize==FALSE) {cat("\n Loading initialization data \n")
     load(file_init)
@@ -57,7 +55,7 @@ if(runTerrestrialModel==TRUE){
                             init_coords=init_coords_T, num_iter=num_iter_T,max_dist = max_dist_T,
                             incl_attachment=incl_attachment,incl_airflow=incl_airflow, incl_natural=incl_natural,
                             incl_containers=incl_containers,incl_pallets=incl_pallets,
-                            Cont_treshold=Cont_treshold,Pall_threshold=Cont_treshold,
+                            Cont_treshold=Cont_treshold,Pall_threshold=Pall_treshold,
                             species_preferences=species_preferences,
                             iter_save = iter_save_T,plot_funct_rel=plot_funct_rel
                           )
@@ -66,12 +64,27 @@ if(runTerrestrialModel==TRUE){
   print(proc.time() - tmp)
   cat("\n Output files being created in ", dir.name_T, "\n")
 
-  if (export_results) {
-    cat("\n Exporting final results \n")
-    write.csv(x = road_netw_out,file = file.path(dir.name_T, "ModelResults.csv"),quote = F,row.names = F)
+  if ("csv"%in%export_results) {
+    cat("\n Exporting Terrestrial results in .csv files \n")
+    for (i in names(TerrestrialModelResults))
+    write.csv(x = TerrestrialModelResults[[i]],file = file.path(dir.name_T, paste("TerrestrialModelResults_",i,".csv")),quote = F,row.names = F)
     # assign(x = "modelList",value = modelList,envir = .GlobalEnv)
   }
 
+  if ("txt"%in%export_results) {
+    cat("\n Exporting Terrestrial results in .txt files \n")
+    for (i in names(TerrestrialModelResults))
+      write.table(x = TerrestrialModelResults[[i]],file = file.path(dir.name_T, paste("TerrestrialModelResults_",i,".txt")),quote = F,row.names = F,sep="\t")
+    # assign(x = "modelList",value = modelList,envir = .GlobalEnv)
+  }
+
+  if ("shp"%in%export_results) {
+    cat("\n Exporting Terrestrial results as ESRI shapefiles \n")
+    for (i in names(TerrestrialModelResults)){
+      shp<-init_obj$roads_shp
+      shp@data<-TerrestrialModelResults[[i]]
+      writeOGR(shp, dsn=file.path(dir.name_T, paste("TerrestrialModelResults_",i)), layer="Terrestrial_network", driver="ESRI Shapefile")}
+  }
 }
 
 if (runAquaticModel==TRUE){
@@ -105,7 +118,7 @@ if (runAquaticModel==TRUE){
                                            Water_netw_data=Water_netw_data,
                                          traffic_type=traffic_type_W,
                                          init_coords=init_coords_W, num_iter=num_iter_W,max_dist = max_dist_W,
-                                         incl_hullfouling=incl_hullfouling,incl_natural_water=incl_natural_water,
+                                         incl_hullfouling=incl_hullfouling,incl_natural_water=incl_natural_water,incl_ballast=incl_ballast,
                                          Port_time=Port_time,Paint_time=Paint_time,
                                          iter_save = iter_save_W,plot_funct_rel=plot_funct_rel
                         )
@@ -114,12 +127,26 @@ if (runAquaticModel==TRUE){
   print(proc.time() - tmp)
   cat("\n Output files being created in ", dir.name_W, "\n")
 
-  if (export_results) {
-    cat("\n Exporting final results \n")
-    write.csv(x = water_netw,file = file.path(dir.name_W, "ModelResults.csv"),quote = F,row.names = F)
+  if ("csv"%in%export_results) {
+    cat("\n Exporting Aquatic results in .csv files \n")
+    for (i in names(AquaticModelResults))
+      write.csv(x = AquaticModelResults[[i]],file = file.path(dir.name_W, paste("AquaticModelResults_",i,".csv")),quote = F,row.names = F)
     # assign(x = "modelList",value = modelList,envir = .GlobalEnv)
   }
 
+  if ("txt"%in%export_results) {
+    cat("\n Exporting Aquatic results in .txt files \n")
+    for (i in names(AquaticModelResults))
+      write.table(x = AquaticModelResults[[i]],file = file.path(dir.name_W, paste("AquaticModelResults_",i,".txt")),quote = F,row.names = F,sep="\t")
+    # assign(x = "modelList",value = modelList,envir = .GlobalEnv)
+  }
+  if ("shp"%in%export_results) {
+    cat("\n Exporting Aquatic results as ESRI shapefiles \n")
+    for (i in names(AquaticModelResults)){
+      shp<-init_water_data$water_shp
+      shp@data<-AquaticModelResults[[i]]
+      writeOGR(shp, dsn=file.path(dir.name_T, paste("AquaticModelResults_",i)), layer="Aquatic_network", driver="ESRI Shapefile")}
+  }
 }
 
 if (makeplot) {

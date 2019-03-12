@@ -11,9 +11,7 @@ save_plot<-TRUE # If TRUE, plots are created in the newly created folder as .png
 save.restart=FALSE #should results be saved in order to resume the simulation at a later stage?
 restart=FALSE #Should the simulation be resumed from previously saved results? Results are saved automatically in restart.rData
 file_restart=NULL #if restart=TRUE, the FULL path of the file to be read in (previously created by ModelSpread() or runCASPIAN() ).MUST BE an .Rdata file
-export_results=c("txt","csv","shp")  #Should results be exported in the newly created folder? Supported values are "csv","txt",and "shp for ESRI Shapefiles.
-#This will create one file per each iteration saved.
-#For "csv" and "txt", the spatial information (e.g. links coordinates) will NOT be retained.
+export_results="txt" #Should results be exported in the newly created folder? Supported values are "csv" and "txt". This will create one file per each iteration saved.
 
 initialize<-TRUE  # Whether the model should be initialized.
 save_init<-FALSE # if initialize=TRUE, should the initialization file be saved?

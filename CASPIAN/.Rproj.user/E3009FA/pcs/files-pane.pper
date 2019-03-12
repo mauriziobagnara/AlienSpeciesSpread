@@ -1,8 +1,8 @@
 {
-    "path" : "~/GitHub/AlienSpeciesSpread/CASPIAN",
+    "path" : "~/GitHub/AlienSpeciesSpread/CASPIAN/data",
     "sortOrder" : [
         {
-            "ascending" : true,
+            "ascending" : false,
             "columnIndex" : 2
         }
     ]

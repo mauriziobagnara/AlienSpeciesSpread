@@ -71,12 +71,12 @@ SpreadModel <- function(parameters,init_obj,
     ## Calculate Pintro for container flows #####################
     if (incl_containers==TRUE){
       cat("\n Calculating Probability of introduction by container for each node \n")
-      Container_netw[,Pi_container:=f_container(numContainers,parameters[nparset,"pall1"])]
+      Container_netw[,Pi_container:=f_container(numContainers,parameters[nparset,"cont1"])]
 
       ## plot functional relationship of probability
       if (plot_funct_rel==TRUE){
         prob_varx <- seq(min(Container_netw$numContainers),max(Container_netw$numContainers),length.out=1000)
-        plot(prob_varx,f_container(prob_varx,parameters[nparset,"pall1"]),main="Container dispersal",xlab="Number of containers",ylab="Probability")
+        plot(prob_varx,f_container(prob_varx,parameters[nparset,"cont1"]),main="Container dispersal",xlab="Number of containers",ylab="Probability")
       }
       Container_netw[,numContainers:=NULL]
 
@@ -199,7 +199,7 @@ SpreadModel <- function(parameters,init_obj,
     road_netw[is.na(p_attach),p_attach:=0]
     road_netw[is.na(p_natural),p_natural:=0]
 
-    ## Calculation of Pintro (Pi_traffi) depending on pathways selection above ########
+    ## Calculation of Pintro (Pi_traffic) depending on pathways selection above ########
     road_netw[, Pi_traffic:=1-Reduce("*", 1-.SD), .SDcols=grep("p_",colnames(road_netw))] # new solution
 
 
@@ -411,7 +411,7 @@ SpreadModel <- function(parameters,init_obj,
         road_netw_out <- road_netw_details[road_netw]
         road_netw_out[,p_link:=stateToNode] #calculate probability of link invasion: to be involved in Pinv instead of Pi, or it stays constant in time
         road_netw_out[,Pinv:=Pe*p_link] # calculate total probability for links
-        road_netw_out[ID%in%init_segm,Pinv:=1] # assigning Pinv=1 for initial links. No effect on Traffic spread dynamics (use nodes).
+#        road_netw_out[ID%in%init_segm,Pinv:=1] # assigning Pinv=1 for initial links. No effect on Traffic spread dynamics (use nodes).
         setkey(road_netw_out,Order)
 
          ## ERROR check for state probabilities

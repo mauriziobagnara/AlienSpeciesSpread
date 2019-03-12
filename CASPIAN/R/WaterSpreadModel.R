@@ -40,7 +40,7 @@
 WaterSpreadModel <- function(parameters,init_obj,
                              Water_netw_data,
                              dir_data=NULL, netw_data=NULL,Rdata_file=NULL,init_coords, num_iter,
-                             incl_hullfouling=T,incl_natural_water=T,
+                             incl_hullfouling=T,incl_natural_water=T,incl_ballast=TRUE,
                              #species_preferences,
                              max_dist,Port_time=NA,Paint_time=NA,
                              iter_save=num_iter,plot_funct_rel=FALSE,
@@ -60,11 +60,38 @@ WaterSpreadModel <- function(parameters,init_obj,
 
   for (nparset in 1:nrow(parameters)){
 
+    ## Calculate Pintro for ballast water #####################
+    if (incl_ballast==TRUE){
+      cat("\n Calculating Probability of introduction by ballast water for each node \n")
+      water_netw[,Pi_ballast:=f_ballast(CargoToNode,parameters[nparset,"ball1"])]
+
+      ## plot functional relationship of probability
+      # if (plot_funct_rel==TRUE){
+      #   prob_varx <- seq(min(Container_netw$numContainers),max(Container_netw$numContainers),length.out=1000)
+      #   plot(prob_varx,f_container(prob_varx,parameters[nparset,"cont1"]),main="Container dispersal",xlab="Number of containers",ylab="Probability")
+      # }
+      # Container_netw[,numContainers:=NULL]
+      #
+
+      #Filling NAs
+      water_netw[is.na(Pi_ballast),Pi_ballast:=0]
+
+      ## ERROR check for Pi_ballast
+      if (is.numeric(water_netw[,Pi_ballast])==FALSE |
+          any(water_netw[,Pi_ballast<0]) | any(water_netw[,Pi_ballast>1])) {
+        assign(x = "water_netw",value = water_netw,envir = .GlobalEnv)
+        stop ("Problem in probability calculations: Pi_ballast either non-numeric or not in 0:1 range")
+      }
+    } else {
+      water_netw[,Pi_ballast:=0]
+    }
+
+
     cat("\n Calculating Probability of Introduction for each segment \n")
 
     ## Calculate natural dispersal #####################
     if (incl_natural_water==TRUE){
-      water_netw[,p_natural:=f_natural_water(prop_mob = parameters[nparset,"mob_prop"],stat = parameters[nparset,"stat_speed"],mob=parameters[nparset,"mob_speed"],d=Length )]
+      water_netw[,p_natural:=f_natural_water(a = parameters[nparset,"nat_a"],b = parameters[nparset,"nat_b"],d=Length )]
     } else{water_netw[,p_natural:=0]}
 
     ## Calculate dispersal by hull fouling #####################
@@ -82,7 +109,7 @@ WaterSpreadModel <- function(parameters,init_obj,
     if (is.numeric(water_netw[,p_natural])==FALSE |
         any(water_netw[,p_natural<0]) | any(water_netw[,p_natural>1])) {
       assign(x = "water_netw",value = water_netw,envir = .GlobalEnv)
-      stop ("Problem in probability calculations: Pi_container either non-numeric or not in 0:1 range")
+      stop ("Problem in probability calculations: p_natural either non-numeric or not in 0:1 range")
     }
     ## ERROR check for p_hull
     if (is.numeric(water_netw[,p_hull])==FALSE |
@@ -100,7 +127,7 @@ WaterSpreadModel <- function(parameters,init_obj,
     #get PE for segment
     cat("\n Calculating Probability of Establishment for each segment \n")
 
-    water_netw[,Pe:=parameters[nparset,"estW"]*LCsuit] # parameter for scaling down probability of establishment # new
+    water_netw[,Pe:=parameters[nparset,"estW"]*Suitab] # parameter for scaling down probability of establishment # new
     water_netw[is.na(Pe),Pe:=0]
 
     ## ERROR check for Pe
@@ -112,8 +139,8 @@ WaterSpreadModel <- function(parameters,init_obj,
 
     ## set data.table key for road network (much faster)
     # And subset relevant information
-    water_netw_details <- water_netw[,c("ID","LCsuit","Length","Traffic","p_natural","p_hull","Order")]
-    set( water_netw, j=which(colnames(water_netw) %in% c("LCsuit","Length","Traffic","p_natural","p_hull","Order")), value=NULL ) # new
+    water_netw_details <- water_netw[,c("ID","Suitab","Length","Traffic","p_natural","p_hull", "Order")]
+    set( water_netw, j=which(colnames(water_netw) %in% c("Suitab","Length","Traffic","p_natural","p_hull","Order")), value=NULL ) # new
     setkey(water_netw,FromNode)
 
 
@@ -151,37 +178,39 @@ WaterSpreadModel <- function(parameters,init_obj,
 
       ## update nodes #####################
       ## Select unique ToNodes
-      newstate_aqua <- unique(water_netw[,c("ToArea","stateToArea","newarrivals")]) # select single node (remove duplicates)
-      ## update stateToAreas
-      newstate_aqua[,stateToArea2:=1-((1-stateToArea) * (1-newarrivals))] # update ToAreas with old and new state
+      newstate_aqua <- unique(water_netw[,c("ToNode","stateToNode","Pi_ballast","newarrivals")]) # select single node (remove duplicates)
+      ## update stateToNodes
+      newstate_aqua[,stateToNode2:=1-((1-stateToNode) * (1-Pi_ballast) * (1-newarrivals))] # update ToNodes with old and new state
       # water_netw[,stateToNode2:=stateToNode]
       # water_netw[ind,stateToNode2:=1-(prod((1-stateToNode) * (1-newarrivals) )),by=ToNode] # update ToNodes with old and new state
       #      water_netw[,stateToNode2:=1-(prod((1-stateToNode2))),by=ToNode] # update ToNodes with old and new state
 
       ## ERROR check for duplicated ToNodes (multiple probabilities assigned to the same node)
-      if (any(duplicated(newstate_aqua$ToArea))) {
+      if (any(duplicated(newstate_aqua$ToNode))) {
         assign(x = "newstate_aqua",value = newstate_aqua,envir = .GlobalEnv)
         stop ("Problem in node probability calculations: ToNode(s) with multiple probabilities")
       }
 
       ## ERROR check for declining stateToNode
-      if (any(water_netw[,stateToNode2<stateToNode]) &
-          any((water_netw[stateToNode2<stateToNode,stateToNode-stateToNode2])>10^-15)) {
-        assign(x = "water_netw",value = water_netw,envir = .GlobalEnv)
+      if (any(newstate_aqua[,stateToNode2<stateToNode]) &
+          any((newstate_aqua[stateToNode2<stateToNode,stateToNode-stateToNode2])>10^-15)) {
+        assign(x = "newstate_aqua",value = newstate_aqua,envir = .GlobalEnv)
         stop ("Problem in spread probability calculations: Decline in stateToNode")
-      } else { water_netw[,stateToNode:=stateToNode2] }
-      water_netw[,stateToNode2:=NULL]
+      } else { newstate_aqua[,stateToNode:=stateToNode2] }
+      newstate_aqua[,c("newarrivals","Pi_ballast","stateToNode2"):=NULL]
+
+ #     assign(x = "newstate_aqua",value = newstate_aqua,envir = .GlobalEnv)
 
       ## Merge new state nodes and network ####################
-      ## Update stateToArea
-      setnames(newstate_aqua,c("ToArea","newstate"))# prepare file for merge (set names and key)
-      ToArea_index <- match(water_netw$ToArea,newstate_aqua$ToArea)
-      water_netw[,stateToArea:=newstate_aqua[ToArea_index,newstate_aqua]]
+      ## Update stateToNode
+      setnames(newstate_aqua,c("ToNode","newstate"))# prepare file for merge (set names and key)
+      ToNode_index <- match(water_netw$ToNode,newstate_aqua$ToNode)
+      water_netw[,stateToNode:=newstate_aqua[ToNode_index,newstate]]
 
       ## ERROR check for wrong column merging
-      if (!identical(water_netw[,ToArea],newstate_aqua[ToArea_index,ToArea])) {
+      if (!identical(water_netw[,ToNode],newstate_aqua[ToNode_index,ToNode])) {
         assign(x = "water_netw",value = water_netw,envir = .GlobalEnv)
-        stop ("ERROR: Waterway network not sorted as ToArea file!")
+        stop ("ERROR: Waterway network not sorted as ToNode file!")
       }
 
       ## Merge new node states with FromNodes of network file

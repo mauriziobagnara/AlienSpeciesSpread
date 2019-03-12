@@ -10,7 +10,7 @@
 # x is a dummy variable that allows the sampling ports to differ. ASSUMED 0 DUE TO HOMOGENEOUS CONDITIONS
 # Tp is travel time since departure from port p,
 # V is typical sailing speed, and
-# VTp is distance travelled.
+# VTp is distance travelled. (in km?)
 # Dp: duration of the stay at port p
 # Qp: time since the last application of antifouling paint (Qp)
 #

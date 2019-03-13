@@ -3,7 +3,7 @@
 InitializeWaterSpread<-function(Water_netw_data,
                                 file_init="water_init_data.Rdata",save_init=TRUE, #netw_type=c("all"),
                                 dir_data=NULL, netw_data=NULL,Rdata_file=NULL,init_coords,max_dist,save_dir,
-                                #species_preferences,
+                                species_preferences,
                                 traffic_type=c("all")
                                 ){
 
@@ -13,7 +13,7 @@ InitializeWaterSpread<-function(Water_netw_data,
   cat("\n Loading network \n")
   water_shp<-Water_netw_data
 
-  colnames(water_shp@data) <- c("FromNode","ToNode","Motorized", "Non_motorized","Length","ID","Order","CargoToNode",   "velocity","River","Flow", "RiverSegm", "Suitab")
+  colnames(water_shp@data) <- c("FromNode","ToNode","Motorized", "Non_motorized","Length","ID","Order","CargoToNode",   "velocity","River","Flow", "RiverSegm", "Temperature","Conductivity")
 
   water_netw <- as.data.table(water_shp@data)
   water_netw[,Order:=c(1:nrow(water_netw))]
@@ -56,34 +56,15 @@ InitializeWaterSpread<-function(Water_netw_data,
   ############################################################### # new
   cat("\n Calculating suitability of habitats \n")
 
-  # fpath<-system.file("extdata", package="CASPIAN")
-  # LCdata <- readRDS(file.path(fpath,"LandCover_RailsRoadsInters_50m.rds"))
-  # categories <- read.xlsx(file.path(fpath,"clc_legend_categories.xlsx"),sheet=2) # load new categories
-  # categories <- categories[,c("GRID_CODE","LC_cat_ID")]
-  # categories<-as.data.table(categories)
-  #
-  # setkey(categories,LC_cat_ID)
-  # setkey(species_preferences,LC_cat_ID)
-  # categories <- species_preferences[categories]
-  #
-  # ### assign new land cover categories and species preferences
-  # LCdata$LCtype <- categories$LC_cat_ID[match(LCdata$LC_ID,categories$GRID_CODE)] # assign new categories
-  # LCdata$SpecPref <- categories$Species_preferences[match(LCdata$LC_ID,categories$GRID_CODE)] # assign new categories
-  # LCdata$LCprop <- LCdata$prop * LCdata$SpecPref
-  #
-  # ## calculate suitability of habitats for each segment
-  # LCdata <- as.data.table(LCdata)
-  # road_segm_suit <- LCdata[,sum(LCprop),by=list(LinkID)]
-  # road_segm_suit[V1>1,V1:=1]
+  maxTemp <- max(water_netw$Temperature,na.rm=T) # identify max values in network file
+  maxCond <- max(water_netw$Conductivity,na.rm=T) # identify max values in network file
+  water_netw$Temperature_norm <- water_netw$Temperature/maxTemp # normalise environmental variables to weight them equally
+  water_netw$Conductivity_norm <- water_netw$Conductivity/maxCond # normalise environmental variables to weight them equally
+  specTemp_norm <- species_preferences$specTemp/maxTemp # normalise species preferences
+  specCond_norm <- species_preferences$specCond/maxCond # normalise species preferences
 
-  # ## merge land cover suitability and road_netw
-  # colnames(road_segm_suit) <- c("ID","LCsuit")
-
-  # setkey(road_segm_suit,ID)
-  # setkey(water_netw,ID)
-  # road_netw <- road_segm_suit[road_netw]
-
-  #water_netw[,LCsuit:=1] #assumes maximum suitability in all links. Possible factors to consider for suitability: temperature, salinity, pollution
+  ## calculate euclidean distance between species preferences and environmental variables
+  water_netw$suitability <- 1-sqrt( (specCond_norm - water_netw$Conductivity_norm)^2 + (specTemp_norm - water_netw$Temperature_norm)^2 )
 
   ###########################################################
 

@@ -21,7 +21,7 @@
 # incl_attachment: if attachment to vehicles should be considered. Default TRUE.
 # incl_airflow: if vehicle airstream should be considered. Default TRUE.
 # incl_natural: if natural dispersal should be considered. Default TRUE.
-# LandCoverID: IDs of Suitable Land Cover. See databases LClegend and LClist.
+
 # max_dist: maximum distance (m) from initial coordinates for a segment to be considered infected.
 # makeplot: should model results be plotted as maps (could be a long process)? Default FALSE.
 # save_plot: logical. If TRUE, plots are created in the newly created folder as .png files.
@@ -127,7 +127,7 @@ WaterSpreadModel <- function(parameters,init_obj,
     #get PE for segment
     cat("\n Calculating Probability of Establishment for each segment \n")
 
-    water_netw[,Pe:=parameters[nparset,"estW"]*Suitab] # parameter for scaling down probability of establishment # new
+    water_netw[,Pe:=parameters[nparset,"estW"]*suitability] # parameter for scaling down probability of establishment # new
     water_netw[is.na(Pe),Pe:=0]
 
     ## ERROR check for Pe
@@ -139,8 +139,8 @@ WaterSpreadModel <- function(parameters,init_obj,
 
     ## set data.table key for road network (much faster)
     # And subset relevant information
-    water_netw_details <- water_netw[,c("ID","Suitab","Length","Traffic","p_natural","p_hull", "Order")]
-    set( water_netw, j=which(colnames(water_netw) %in% c("Suitab","Length","Traffic","p_natural","p_hull","Order")), value=NULL ) # new
+    water_netw_details <- water_netw[,c("ID","suitability","Length","Traffic","p_natural","p_hull", "Order")]
+    set( water_netw, j=which(colnames(water_netw) %in% c("suitability","Length","Traffic","p_natural","p_hull","Order")), value=NULL ) # new
     setkey(water_netw,FromNode)
 
 

@@ -12,14 +12,14 @@ runCASPIAN<-function(configFile){
                        par_a,par_c1,par_g,par_c2,par_b,par_c3,par_est_W
                        )
 
-  #build land cover species preference matrix
-  species_preferences<- data.table(LC_cat_ID= 1:5,Species_preferences=c(Urban_areas,Arable_land,Pastures,Forests,Wetlands))
-
   modelResults<-list()
 
 if(runTerrestrialModel==TRUE){
   cat("\n Running Terrestrial Model \n")
   tmp <- proc.time()
+
+  #build land cover species preference matrix
+  species_preferences<- data.table(LC_cat_ID= 1:5,Species_preferences=c(Urban_areas,Arable_land,Pastures,Forests,Wetlands))
 
   #running model:
   dir.name_T<-file.path(getwd(),paste0("CASPIAN_Terrestrial_",format(Sys.time(), "%d-%b-%Y %H-%M-%S")))
@@ -56,7 +56,7 @@ if(runTerrestrialModel==TRUE){
                             incl_attachment=incl_attachment,incl_airflow=incl_airflow, incl_natural=incl_natural,
                             incl_containers=incl_containers,incl_pallets=incl_pallets,
                             Cont_treshold=Cont_treshold,Pall_threshold=Pall_treshold,
-                            species_preferences=species_preferences,
+                            #species_preferences=species_preferences,
                             iter_save = iter_save_T,plot_funct_rel=plot_funct_rel
                           )
 
@@ -92,6 +92,9 @@ if (runAquaticModel==TRUE){
   cat("\n Running Aquatic Model \n")
   tmp <- proc.time()
 
+  #build aquatic species preference matrix
+  species_preferences<- data.table(specTemp,specCond)
+
   #running model:
   dir.name_W<-file.path(getwd(),paste0("CASPIAN_Aquatic_",format(Sys.time(), "%d-%b-%Y %H-%M-%S")))
   dir.create(dir.name_W)
@@ -105,7 +108,7 @@ if (runAquaticModel==TRUE){
                                            init_coords=init_coords_W,max_dist=max_dist_W,
                                            #netw_type=netw_type,
                                            save_init=save_init, save_dir=dir.name_W,file_init=file_init,
-                                           #species_preferences=species_preferences,
+                                           species_preferences=species_preferences,
                                            traffic_type=traffic_type_W
     )
 

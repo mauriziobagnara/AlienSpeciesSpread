@@ -131,8 +131,9 @@ par_ball<-10^4 #increase for lower probability
 ## Aquatic establishment scale parameter
 par_est_W<- .7 #arbitrary,<=1. Pioneer species should have high values (more likely to establish if the habitat is suitable), late succession species lower values.
 
-
-# Suitable_LandCoverID<-c(10:11,12:29) #select all and it should not make a difference
+#Set optimal Temperature and Conductivity for establishment
+specTemp <- 13 # optimal Temperature (degrees C)
+specCond <- 100 # optimal Conductivity (mS/m)
 
 #### Initialization info #################################
 Terrestrial_netw_data<-Road_Railway_Network

@@ -14,8 +14,25 @@ plotResults<-function(list_results,shapeObj,save_plot,save_dir){
     cat("\n Creating map",i,"out of", length(list_results),"\n")
     time_plot<-proc.time()
 
-    shapeObj@data <- list_results[[i]]
+    shapeObj@data <- copy(list_results[[i]])
 
+    # Combine probabilities of invasion in both directions
+    CombList<-list()
+    already<-c()
+    for (i in shapeObj$ID){
+      if (i%in%already==FALSE) {
+        x<-shapeObj[shapeObj$ID==i,]
+        y<-shapeObj[shapeObj$FromNode==x$ToNode & shapeObj$ToNode==x$FromNode,]
+        z<-rbind(x,y)
+        z@data$Pinv<-pUnion(z@data$Pinv)
+        already<-c(already,z@data$ID)
+        CombList<-append(CombList,z)
+      }
+    }
+    shapeObj<-do.call(rbind(CombList))
+
+
+    # get color palette here
     shapeObj@data$norm <- as.character(round(shapeObj@data$Pinv,num_col))
 
     shapeObj@data<-merge(shapeObj@data,pal,by="norm",all.x=TRUE,sort=FALSE)

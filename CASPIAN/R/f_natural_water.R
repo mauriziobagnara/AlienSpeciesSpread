@@ -6,7 +6,7 @@
 f_natural_water<-function(a,b,d){
 d<-d *1000 #convert Km to m
 p<-a*d^(-b)
-p<-p*(365/12) #calculate monthly probability
+p<-pUnion(rep(p,30)) #calculate monthly probability as combination of getting there one day OR the next OR the next..
 return(p)
 }
 
